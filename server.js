@@ -139,6 +139,10 @@ const INSCRIPTIONS_FILE = path.join(__dirname, 'inscriptions.json');
 const CONFIG_FILE = path.join(__dirname, 'config.json');
 const ADMIN_FILE = path.join(__dirname, 'admin-password.json');
 
+// Configuration pour l'envoi d'e-mails via API
+const EMAIL_API_KEY = process.env.EMAIL_API_KEY;
+const EMAIL_API_URL = process.env.EMAIL_API_URL;
+
 // Admin sessions (stocké en mémoire, réinitialisation au redémarrage du serveur)
 const adminSessions = new Map();
 
@@ -310,7 +314,7 @@ function generateSessionToken() {
 // Middleware d'authentification admin
 function requireAdminAuth(req, res, next) {
   const token = req.headers['x-admin-token'] || req.body.token;
-  
+
   if (!token || !adminSessions.has(token)) {
     return res.status(401).json({ error: 'Non authentifié. Veuillez vous connecter.' });
   }
@@ -325,19 +329,61 @@ function requireAdminAuth(req, res, next) {
   next();
 }
 
-// Fonction pour envoyer message Telegram - SUPPRIMÉE
-// Toutes les notifications Telegram ont été retirées du système
-
-// Fonction pour envoyer un email
-async function sendEmail(toEmail, subject, htmlContent) {
-  if (!emailTransporter) {
-    console.warn('⚠️ Email non configuré.');
-    console.warn('   Configurez EMAIL_USER et EMAIL_PASSWORD dans .env pour activer les emails');
+// Fonction pour envoyer un email via SendGrid
+async function sendEmailViaAPI(toEmail, subject, htmlContent) {
+  if (!EMAIL_API_KEY) {
+    console.warn('⚠️ Clé API SendGrid non configurée.');
+    console.warn('   Configurez EMAIL_API_KEY dans les variables d\'environnement');
     return false;
   }
 
   try {
-    console.log(`📧 Envoi email à ${toEmail}...`);
+    console.log(`📧 Envoi email via SendGrid à ${toEmail}...`);
+
+    const emailData = {
+      personalizations: [{
+        to: [{ email: toEmail }],
+        subject: subject
+      }],
+      from: { email: process.env.EMAIL_FROM || 'YOUR_VERIFIED_SENDER@yourdomain.com' }, // Remplacez par votre adresse vérifiée
+      content: [{
+        type: 'text/html',
+        value: htmlContent
+      }]
+    };
+
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${EMAIL_API_KEY}`
+      },
+      body: JSON.stringify(emailData)
+    });
+
+    if (response.ok) {
+      console.log(`✅ Email envoyé via SendGrid à ${toEmail}`);
+      return true;
+    } else {
+      console.error(`❌ Erreur SendGrid: ${response.status} - ${await response.text()}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Erreur envoi email via SendGrid:', error.message);
+    return false;
+  }
+}
+
+// Fonction pour envoyer un email via SMTP (méthode traditionnelle)
+async function sendEmailSMTP(toEmail, subject, htmlContent) {
+  if (!emailTransporter) {
+    console.warn('⚠️ SMTP non configuré.');
+    console.warn('   Configurez EMAIL_USER et EMAIL_PASSWORD dans .env pour activer les emails SMTP');
+    return false;
+  }
+
+  try {
+    console.log(`📧 Envoi email SMTP à ${toEmail}...`);
 
     await emailTransporter.sendMail({
       from: EMAIL_USER,
@@ -346,24 +392,90 @@ async function sendEmail(toEmail, subject, htmlContent) {
       html: htmlContent
     });
 
-    console.log(`✅ Email envoyé à ${toEmail}`);
+    console.log(`✅ Email SMTP envoyé à ${toEmail}`);
     return true;
   } catch (error) {
-    console.error('❌ Erreur Email:', error.message);
+    console.error('❌ Erreur Email SMTP:', error.message);
     return false;
   }
 }
 
-// Fonction pour envoyer un email avec pièce jointe
-async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
-  if (!emailTransporter) {
-    console.warn('⚠️ Email non configuré.');
-    console.warn('   Configurez EMAIL_USER et EMAIL_PASSWORD dans .env pour activer les emails');
+// Fonction pour envoyer un email (utilise soit l'API, soit SMTP)
+async function sendEmail(toEmail, subject, htmlContent) {
+  // Essayer d'abord via l'API
+  if (EMAIL_API_KEY && EMAIL_API_URL) {
+    return await sendEmailViaAPI(toEmail, subject, htmlContent);
+  }
+  // Sinon essayer via SMTP
+  else {
+    return await sendEmailSMTP(toEmail, subject, htmlContent);
+  }
+}
+
+// Fonction pour envoyer un email avec pièce jointe via SendGrid
+async function sendEmailWithAttachmentViaAPI(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
+  if (!EMAIL_API_KEY) {
+    console.warn('⚠️ Clé API SendGrid non configurée.');
+    console.warn('   Configurez EMAIL_API_KEY dans les variables d\'environnement');
     return false;
   }
 
   try {
-    console.log(`📧 Envoi email à ${toEmail} avec pièce jointe...`);
+    console.log(`📧 Envoi email avec pièce jointe via SendGrid à ${toEmail}...`);
+
+    // Lire le fichier PDF
+    const pdfBuffer = fs.readFileSync(attachmentPath);
+    const pdfBase64 = pdfBuffer.toString('base64');
+
+    const emailData = {
+      personalizations: [{
+        to: [{ email: toEmail }],
+        subject: subject
+      }],
+      from: { email: process.env.EMAIL_FROM || 'YOUR_VERIFIED_SENDER@yourdomain.com' }, // Remplacez par votre adresse vérifiée
+      content: [{
+        type: 'text/html',
+        value: htmlContent
+      }],
+      attachments: [{
+        filename: attachmentName,
+        type: 'application/pdf',
+        content: pdfBase64
+      }]
+    };
+
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${EMAIL_API_KEY}`
+      },
+      body: JSON.stringify(emailData)
+    });
+
+    if (response.ok) {
+      console.log(`✅ Email avec pièce jointe envoyé via SendGrid à ${toEmail}`);
+      return true;
+    } else {
+      console.error(`❌ Erreur SendGrid Email avec pièce jointe: ${response.status} - ${await response.text()}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Erreur envoi email avec pièce jointe via SendGrid:', error.message);
+    return false;
+  }
+}
+
+// Fonction pour envoyer un email avec pièce jointe via SMTP
+async function sendEmailWithAttachmentSMTP(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
+  if (!emailTransporter) {
+    console.warn('⚠️ SMTP non configuré.');
+    console.warn('   Configurez EMAIL_USER et EMAIL_PASSWORD dans .env pour activer les emails SMTP');
+    return false;
+  }
+
+  try {
+    console.log(`📧 Envoi email avec pièce jointe SMTP à ${toEmail}...`);
 
     const mailOptions = {
       from: EMAIL_USER,
@@ -382,11 +494,23 @@ async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachment
 
     await emailTransporter.sendMail(mailOptions);
 
-    console.log(`✅ Email envoyé à ${toEmail} avec pièce jointe`);
+    console.log(`✅ Email avec pièce jointe SMTP envoyé à ${toEmail}`);
     return true;
   } catch (error) {
-    console.error('❌ Erreur Email avec pièce jointe:', error.message);
+    console.error('❌ Erreur Email avec pièce jointe SMTP:', error.message);
     return false;
+  }
+}
+
+// Fonction pour envoyer un email avec pièce jointe (utilise soit l'API, soit SMTP)
+async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
+  // Essayer d'abord via l'API
+  if (EMAIL_API_KEY && EMAIL_API_URL) {
+    return await sendEmailWithAttachmentViaAPI(toEmail, subject, htmlContent, attachmentName, attachmentPath);
+  }
+  // Sinon essayer via SMTP
+  else {
+    return await sendEmailWithAttachmentSMTP(toEmail, subject, htmlContent, attachmentName, attachmentPath);
   }
 }
 
