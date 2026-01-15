@@ -767,15 +767,9 @@ ${method === 'transaction-id' ? `🔑 <b>ID Transaction:</b> <code>${transaction
       // On lance l'envoi de la notification dans une promesse séparée pour ne pas bloquer la réponse
       const telegramPromise = (async () => {
         try {
-          // Format du message Telegram
+          // Format du message Telegram simplifié
           const telegramMessage = `🔔 <b>NOUVEAU PAIEMENT EN ATTENTE DE VÉRIFICATION</b>\n\n` +
-            `📝 <b>Nom:</b> ${nom}\n` +
-            `📧 <b>Email:</b> ${email}\n` +
-            `📱 <b>WhatsApp:</b> ${whatsapp}\n` +
-            `🚀 <b>Projet:</b> ${projet.substring(0, 100)}${projet.length > 100 ? '...' : ''}\n` +
-            `📌 <b>Méthode:</b> ${method === 'screenshot' ? 'Screenshot' : 'ID de Transaction'}\n` +
-            `${method === 'transaction-id' && transactionId ? `<b>ID Transaction:</b> ${transactionId}\n` : ''}` +
-            `📅 <b>Date:</b> ${new Date().toLocaleString('fr-FR')}\n\n` +
+            `📝 Un nouveau paiement a été soumis et nécessite votre vérification.\n\n` +
             `👉 <b>Connectez-vous à votre dashboard admin pour approuver ou rejeter ce paiement.</b>`;
 
           // Envoyer la notification via l'API Telegram
