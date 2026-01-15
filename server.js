@@ -62,7 +62,7 @@ const logger = {
   error: (msg, data = '') => console.error(`[ERROR] ${new Date().toLocaleTimeString()} ${msg} ${data}`),
 };
 
-// Rate Limiting Configuration (DOIT ÊTRE AVANT app.use)
+// Rate Limiting Configuration
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // 1000 requêtes par IP
@@ -102,15 +102,10 @@ app.use((req, res, next) => {
 });
 
 // Setup multer for file uploads
-const upload = multer({ 
+const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
 });
-
-// Configuration Telegram retirée
-// Toutes les notifications Telegram ont été supprimées du système
-
-
 
 // Initialiser Nodemailer pour Email
 let emailTransporter = null;
@@ -134,14 +129,14 @@ if (EMAIL_USER && EMAIL_PASSWORD) {
   console.warn('⚠️ Email non configuré. Configurez EMAIL_USER et EMAIL_PASSWORD dans .env');
 }
 
-// Fichier pour tracker les inscriptions
+// Fichiers de données
 const INSCRIPTIONS_FILE = path.join(__dirname, 'inscriptions.json');
 const CONFIG_FILE = path.join(__dirname, 'config.json');
 const ADMIN_FILE = path.join(__dirname, 'admin-password.json');
+const PENDING_PAYMENTS_FILE = path.join(__dirname, 'pending-payments.json');
+const GROUP_LINKS_FILE = path.join(__dirname, 'group-links.json');
 
-// Aucune configuration supplémentaire requise - les notifications sont gérées via Telegram
-
-// Admin sessions (stocké en mémoire, réinitialisation au redémarrage du serveur)
+// Sessions admin (stocké en mémoire, réinitialisation au redémarrage du serveur)
 const adminSessions = new Map();
 
 // Charger la configuration
@@ -160,18 +155,25 @@ function saveConfig(config) {
 
 let MAX_INSCRIPTIONS = getConfig().maxPlaces;
 
-// Initialiser le fichier s'il n'existe pas
+// Initialiser les fichiers s'ils n'existent pas
 if (!fs.existsSync(INSCRIPTIONS_FILE)) {
   fs.writeFileSync(INSCRIPTIONS_FILE, JSON.stringify([], null, 2));
 }
 
-// Fonction pour sanitizer les entrées
+if (!fs.existsSync(PENDING_PAYMENTS_FILE)) {
+  fs.writeFileSync(PENDING_PAYMENTS_FILE, JSON.stringify([], null, 2));
+}
+
+if (!fs.existsSync(GROUP_LINKS_FILE)) {
+  fs.writeFileSync(GROUP_LINKS_FILE, JSON.stringify({ groups: [] }, null, 2));
+}
+
+// Fonctions utilitaires
 function sanitizeInput(str) {
   if (typeof str !== 'string') return '';
   return str.trim().replace(/[<>\"']/g, '').slice(0, 500);
 }
 
-// Fonction pour valider email
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 100;
 }
@@ -327,48 +329,7 @@ function requireAdminAuth(req, res, next) {
   next();
 }
 
-// Fonction pour envoyer un email via Resend
-async function sendEmailViaAPI(toEmail, subject, htmlContent) {
-  const resendApiKey = process.env.RESEND_API_KEY;
-  if (!resendApiKey) {
-    console.warn('⚠️ Clé API Resend non configurée.');
-    console.warn('   Configurez RESEND_API_KEY dans les variables d\'environnement');
-    return false;
-  }
-
-  try {
-    console.log(`📧 Envoi email via Resend à ${toEmail}...`);
-
-    const emailData = {
-      from: process.env.EMAIL_FROM || 'onboarding@resend.dev', // Remplacez par votre adresse vérifiée
-      to: toEmail,
-      subject: subject,
-      html: htmlContent
-    };
-
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${resendApiKey}`
-      },
-      body: JSON.stringify(emailData)
-    });
-
-    if (response.ok) {
-      console.log(`✅ Email envoyé via Resend à ${toEmail}`);
-      return true;
-    } else {
-      console.error(`❌ Erreur Resend: ${response.status} - ${await response.text()}`);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Erreur envoi email via Resend:', error.message);
-    return false;
-  }
-}
-
-// Fonction pour envoyer un email via SMTP (méthode traditionnelle)
+// Fonctions d'envoi d'e-mails (uniquement via SMTP)
 async function sendEmailSMTP(toEmail, subject, htmlContent) {
   if (!emailTransporter) {
     console.warn('⚠️ SMTP non configuré.');
@@ -394,15 +355,11 @@ async function sendEmailSMTP(toEmail, subject, htmlContent) {
   }
 }
 
-// Fonction pour envoyer un email (utilise uniquement SMTP)
 async function sendEmail(toEmail, subject, htmlContent) {
   // Utiliser uniquement SMTP
   return await sendEmailSMTP(toEmail, subject, htmlContent);
 }
 
-
-
-// Fonction pour envoyer un email avec pièce jointe via SMTP
 async function sendEmailWithAttachmentSMTP(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
   if (!emailTransporter) {
     console.warn('⚠️ SMTP non configuré.');
@@ -438,13 +395,10 @@ async function sendEmailWithAttachmentSMTP(toEmail, subject, htmlContent, attach
   }
 }
 
-// Fonction pour envoyer un email avec pièce jointe (utilise uniquement SMTP)
 async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
   // Utiliser uniquement SMTP
   return await sendEmailWithAttachmentSMTP(toEmail, subject, htmlContent, attachmentName, attachmentPath);
 }
-
-
 
 // Route pour initialiser/mettre à jour le mot de passe admin (une seule fois au démarrage)
 async function initAdminPassword() {
@@ -473,16 +427,16 @@ initAdminPassword();
 app.post('/admin/login', loginLimiter, async (req, res) => {
   try {
     const { password } = req.body;
-    
+
     if (!password) {
       return res.status(400).json({ error: 'Mot de passe requis' });
     }
 
     const adminConfig = JSON.parse(fs.readFileSync(ADMIN_FILE, 'utf8'));
-    
+
     // Comparer le mot de passe haché
     const passwordMatch = await bcrypt.compare(password, adminConfig.password);
-    
+
     if (!passwordMatch) {
       logger.warn('Tentative de connexion échouée');
       return res.status(401).json({ error: 'Mot de passe incorrect' });
@@ -493,8 +447,8 @@ app.post('/admin/login', loginLimiter, async (req, res) => {
     adminSessions.set(token, { createdAt: Date.now() });
 
     logger.info('Admin connecté avec token:', token.substring(0, 10) + '...');
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       token: token,
       message: 'Connecté avec succès'
     });
@@ -549,9 +503,9 @@ app.post('/api/download-acceptance-pdf', async (req, res) => {
 app.get('/api/inscriptions-count', (req, res) => {
   const inscriptions = getInscriptions();
   const config = getConfig();
-  
+
   logger.info(`Inscriptions: ${inscriptions.length}/${config.maxPlaces}, Session: ${config.sessionOpen}`);
-  
+
   res.json({
     count: inscriptions.length,
     max: config.maxPlaces,
@@ -649,10 +603,9 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
     }
 
     // Sauvegarder l'inscription avec la preuve
-    const pendingFile = path.join(__dirname, 'pending-payments.json');
     let pendingPayments = [];
-    if (fs.existsSync(pendingFile)) {
-      pendingPayments = JSON.parse(fs.readFileSync(pendingFile, 'utf8'));
+    if (fs.existsSync(PENDING_PAYMENTS_FILE)) {
+      pendingPayments = JSON.parse(fs.readFileSync(PENDING_PAYMENTS_FILE, 'utf8'));
     }
 
     const paymentId = Date.now().toString();
@@ -683,23 +636,7 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
     }
 
     pendingPayments.push(paymentData);
-    fs.writeFileSync(pendingFile, JSON.stringify(pendingPayments, null, 2));
-
-    // Message Telegram
-    let telegramMessage = `
-⏳ <b>NOUVEAU PAIEMENT EN ATTENTE DE VÉRIFICATION</b>
-
-📝 <b>Nom:</b> ${nom}
-📧 <b>Email:</b> ${email}
-📱 <b>WhatsApp:</b> ${whatsapp}
-🚀 <b>Projet:</b> ${projet}
-
-💾 <b>ID Paiement:</b> <code>${paymentId}</code>
-📌 <b>Méthode:</b> ${method === 'screenshot' ? 'Screenshot' : 'ID de Transaction'}
-${method === 'transaction-id' ? `🔑 <b>ID Transaction:</b> <code>${transactionId}</code>` : ''}
-
-<b>Vérifiez dans l'admin et approuvez.</b>
-    `;
+    fs.writeFileSync(PENDING_PAYMENTS_FILE, JSON.stringify(pendingPayments, null, 2));
 
     // Notification via Telegram à l'administrateur (envoyée de manière asynchrone pour ne pas bloquer la réponse)
     const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN; // Token du bot Telegram
@@ -738,9 +675,6 @@ ${method === 'transaction-id' ? `🔑 <b>ID Transaction:</b> <code>${transaction
       })();
     }
 
-    // Notification simple sans envoi de preuve pour éviter les erreurs
-    // La preuve est consultable dans le dashboard admin
-
     res.json({
       success: true,
       message: 'Paiement en attente de vérification',
@@ -756,12 +690,23 @@ ${method === 'transaction-id' ? `🔑 <b>ID Transaction:</b> <code>${transaction
 
 // Route pour admin - voir les paiements en attente
 app.get('/admin/pending-payments', requireAdminAuth, (req, res) => {
-  const pendingFile = path.join(__dirname, 'pending-payments.json');
   let pendingPayments = [];
-  if (fs.existsSync(pendingFile)) {
-    pendingPayments = JSON.parse(fs.readFileSync(pendingFile, 'utf8'));
+  if (fs.existsSync(PENDING_PAYMENTS_FILE)) {
+    pendingPayments = JSON.parse(fs.readFileSync(PENDING_PAYMENTS_FILE, 'utf8'));
   }
   res.json(pendingPayments);
+});
+
+// Route pour admin - voir les inscriptions
+app.get('/admin/inscriptions', requireAdminAuth, (req, res) => {
+  const inscriptions = getInscriptions();
+  const config = getConfig();
+  res.json({
+    inscriptions,
+    total: inscriptions.length,
+    max: config.maxPlaces,
+    sessionOpen: config.sessionOpen
+  });
 });
 
 // Route pour admin - approuver un paiement avec lien du groupe
@@ -769,9 +714,9 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { groupLink } = req.body;
-    const pendingFile = path.join(__dirname, 'pending-payments.json');
-    const groupLinksFile = path.join(__dirname, 'group-links.json');
-    
+    const pendingFile = PENDING_PAYMENTS_FILE;
+    const groupLinksFile = GROUP_LINKS_FILE;
+
     let pendingPayments = [];
     if (fs.existsSync(pendingFile)) {
       pendingPayments = JSON.parse(fs.readFileSync(pendingFile, 'utf8'));
@@ -804,25 +749,26 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
     pendingPayments[paymentIndex] = payment;
     fs.writeFileSync(pendingFile, JSON.stringify(pendingPayments, null, 2));
 
-    // Notification email uniquement
-
     // Sauvegarder le lien du groupe si fourni
-    let groupLinksData = [];
+    let groupLinksData = { groups: [] };
     if (fs.existsSync(groupLinksFile)) {
       const rawData = fs.readFileSync(groupLinksFile, 'utf8');
       try {
         const parsedData = JSON.parse(rawData);
-        // S'assurer que groupLinksData est un tableau
-        groupLinksData = Array.isArray(parsedData) ? parsedData : [];
+        // S'assurer que groupLinksData est un objet avec une propriété groups
+        groupLinksData = typeof parsedData === 'object' && parsedData !== null ? parsedData : { groups: [] };
+        if (!Array.isArray(groupLinksData.groups)) {
+          groupLinksData.groups = [];
+        }
       } catch (parseError) {
         console.error('Erreur parsing group-links.json:', parseError.message);
-        // Si le fichier est corrompu, initialiser avec un tableau vide
-        groupLinksData = [];
+        // Si le fichier est corrompu, initialiser avec un objet vide
+        groupLinksData = { groups: [] };
       }
     }
 
     if (groupLink) {
-      groupLinksData.push({
+      groupLinksData.groups.push({
         id: payment.id,
         nom: payment.nom,
         email: payment.email,
@@ -862,31 +808,20 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
               h1 { color: #00d4ff; }
               .success { color: #10b981; font-weight: bold; }
               a { color: #00d4ff; text-decoration: none; }
-              a:hover { text-decoration: underline; }
-              .footer { margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px; color: #6b7280; font-size: 0.9rem; }
+              .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 0.9em; }
           </style>
       </head>
       <body>
           <div class="container">
-              <h1>🎉 Bienvenue dans Boost & Success!</h1>
-
-              <p>Bonjour ${payment.nom},</p>
-
-              <p>Nous sommes heureux de vous informer que votre <span class="success">paiement a été approuvé</span> et votre <span class="success">inscription est validée</span>.</p>
-
-              <p><strong>Détails de votre inscription:</strong></p>
-              <ul>
-                  <li>Nom: ${payment.nom}</li>
-                  <li>Email: ${payment.email}</li>
-                  <li>Projet: ${payment.projet}</li>
-                  <li>Date d'approbation: ${new Date().toLocaleString('fr-FR')}</li>
-              </ul>
-
-              <p>Vous pouvez désormais accéder à notre <strong>groupe privé</strong> et bénéficier de tous nos services exclusifs!</p>
-
+              <h1>🎉 Félicitations!</h1>
+              
+              <p>Votre inscription au programme <strong>Boost & Success</strong> a été <span class="success">approuvée</span>!</p>
+              
+              <p>Nous avons validé votre paiement et vous êtes maintenant officiellement membre de notre communauté exclusive d'entrepreneurs.</p>
+              
               ${groupLinkSection}
-
-              <p style="margin-top: 20px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 5px;">
+              
+              <p style="margin-top: 30px; padding: 20px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 5px;">
                   <strong>Document joint:</strong> Un PDF de vos conditions d'acceptation signées a été joint à cet email pour vos archives.
               </p>
 
@@ -931,8 +866,8 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
 app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const pendingFile = path.join(__dirname, 'pending-payments.json');
-    
+    const pendingFile = PENDING_PAYMENTS_FILE;
+
     let pendingPayments = [];
     if (fs.existsSync(pendingFile)) {
       pendingPayments = JSON.parse(fs.readFileSync(pendingFile, 'utf8'));
@@ -946,24 +881,12 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
 
     const payment = pendingPayments[paymentIndex];
 
-    // Mettre à jour le statut
+    // Mettre à jour le statut du paiement
     payment.status = 'rejected';
     pendingPayments[paymentIndex] = payment;
     fs.writeFileSync(pendingFile, JSON.stringify(pendingPayments, null, 2));
 
-    // Notifier Telegram
-    const telegramMessage = `
-❌ <b>PAIEMENT REJETÉ</b>
-
-📝 <b>Nom:</b> ${payment.nom}
-📧 <b>Email:</b> ${payment.email}
-
-<b>Raison :</b> Preuve de paiement invalide
-    `;
-
-    sendTelegramMessage(telegramMessage);
-
-    // Envoyer email au client pour notifier du rejet
+    // Envoyer email de rejet au client
     const rejectionEmailHtml = `
       <!DOCTYPE html>
       <html lang="fr">
@@ -973,37 +896,20 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
               body { font-family: Arial, sans-serif; background: #f3f4f6; }
               .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
               h1 { color: #ef4444; }
-              .warning { color: #f59e0b; font-weight: bold; }
-              .footer { margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px; color: #6b7280; font-size: 0.9rem; }
+              .error { color: #ef4444; font-weight: bold; }
+              .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 0.9em; }
           </style>
       </head>
       <body>
           <div class="container">
-              <h1>❌ Votre preuve de paiement a été rejetée</h1>
+              <h1>❌ Paiement Rejeté</h1>
               
-              <p>Bonjour ${payment.nom},</p>
+              <p>Votre paiement pour le programme <strong>Boost & Success</strong> a été <span class="error">rejeté</span>.</p>
               
-              <p>Nous avons examiné votre preuve de paiement pour rejoindre Boost & Success, mais malheureusement <span class="warning">elle a été rejetée</span>.</p>
+              <p>Nous avons examiné votre preuve de paiement mais n'avons pas pu la valider. Veuillez nous contacter pour plus d'informations.</p>
               
-              <p><strong>Raison du rejet:</strong></p>
-              <ul>
-                  <li>Preuve de paiement invalide ou illisible</li>
-              </ul>
-              
-              <p><strong>Comment corriger:</strong></p>
-              <ul>
-                  <li>✅ Assurez-vous que le screenshot est clair et lisible</li>
-                  <li>✅ Vérifiez que l'ID de transaction contient uniquement des chiffres</li>
-                  <li>✅ Incluez le numéro de compte ou référence de paiement</li>
-              </ul>
-              
-              <p style="margin-top: 20px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 5px;">
-                  <strong>Prochain pas:</strong><br>
-                  Veuillez réessayer en soumettant une nouvelle preuve de paiement valide via notre site.
-              </p>
-              
-              <p style="margin-top: 30px;">Si vous pensez qu'il y a une erreur, n'hésitez pas à nous contacter.</p>
-              
+              <p>Si vous pensez qu'il s'agit d'une erreur, n'hésitez pas à nous contacter pour clarifier la situation.</p>
+
               <div class="footer">
                   <p>© 2026 Boost & Success - Tous droits réservés</p>
                   <p>Questions? Contactez-nous à <a href="mailto:adinaroles@gmail.com">adinaroles@gmail.com</a></p>
@@ -1013,15 +919,19 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
       </html>
     `;
 
-    try {
-      await sendEmail(payment.email, '❌ Votre preuve de paiement a été rejetée', rejectionEmailHtml);
-    } catch (emailError) {
-      console.warn('⚠️ Erreur Email rejet (ne bloque pas):', emailError.message);
+    const emailSent = await sendEmail(
+      payment.email,
+      '❌ Votre preuve de paiement a été rejetée',
+      rejectionEmailHtml
+    );
+
+    if (!emailSent) {
+      console.warn('⚠️ Email de rejet non envoyé à', payment.email);
     }
 
     res.json({
       success: true,
-      message: 'Paiement rejeté et email de notification envoyé'
+      message: 'Paiement rejeté et client notifié'
     });
 
   } catch (error) {
@@ -1030,86 +940,17 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
   }
 });
 
-// Route pour admin - voir toutes les inscriptions
-app.get('/admin/inscriptions', requireAdminAuth, (req, res) => {
-  const inscriptions = getInscriptions();
-  const config = getConfig();
-  res.json({
-    total: inscriptions.length,
-    max: config.maxPlaces,
-    available: inscriptions.length < config.maxPlaces,
-    sessionOpen: config.sessionOpen,
-    inscriptions: inscriptions
-  });
-});
-
-// Route pour admin - modifier le nombre de places
-app.post('/admin/update-places', requireAdminAuth, (req, res) => {
-  try {
-    const { maxPlaces, action } = req.body;
-    
-    if (action === 'increment' && maxPlaces) {
-      const config = getConfig();
-      const newMax = config.maxPlaces + maxPlaces;
-      config.maxPlaces = newMax;
-      MAX_INSCRIPTIONS = newMax;
-      saveConfig(config);
-      
-      const telegramMessage = `
-✅ <b>NOUVELLES PLACES AJOUTÉES</b>
-
-🎯 <b>Nouvelles places:</b> +${maxPlaces}
-📊 <b>Total places:</b> ${newMax}
-👥 <b>Places occupées:</b> ${getInscriptions().length}/${newMax}
-      `;
-      
-      // Notification Telegram retirée - utilisation de la notification email à la place
-      
-      return res.json({
-        success: true,
-        message: `${maxPlaces} places ont été ajoutées`,
-        newMax: newMax,
-        totalCount: getInscriptions().length
-      });
-    }
-    
-    if (action === 'reset') {
-      const config = getConfig();
-      config.maxPlaces = 5;
-      MAX_INSCRIPTIONS = 5;
-      saveConfig(config);
-      
-      // Notification Telegram retirée - utilisation de la notification email à la place
-      
-      return res.json({
-        success: true,
-        message: 'Places réinitialisées à 5',
-        newMax: 5
-      });
-    }
-    
-    return res.status(400).json({ error: 'Action invalide' });
-    
-  } catch (error) {
-    console.error('Erreur:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-});
-
-// Route pour admin - toggle session ouverture
+// Route pour admin - ouvrir/fermer les inscriptions
 app.post('/admin/toggle-session', requireAdminAuth, (req, res) => {
   try {
     const config = getConfig();
     config.sessionOpen = !config.sessionOpen;
     saveConfig(config);
-    
-    const status = config.sessionOpen ? '🟢 OUVERTE' : '🔴 FERMÉE';
-    // Notification Telegram retirée - utilisation de la notification email à la place
-    
+
     res.json({
       success: true,
-      sessionOpen: config.sessionOpen,
-      message: config.sessionOpen ? 'Session ouverte' : 'Session fermée'
+      message: config.sessionOpen ? 'Inscriptions ouvertes' : 'Inscriptions fermées',
+      sessionOpen: config.sessionOpen
     });
   } catch (error) {
     console.error('Erreur:', error);
@@ -1117,49 +958,74 @@ app.post('/admin/toggle-session', requireAdminAuth, (req, res) => {
   }
 });
 
-// Route pour exporter les inscriptions en CSV
+// Route pour admin - mettre à jour le nombre de places
+app.post('/admin/update-places', requireAdminAuth, (req, res) => {
+  try {
+    const { maxPlaces, action } = req.body;
+    const config = getConfig();
+
+    if (action === 'reset') {
+      config.maxPlaces = 5;
+    } else if (action === 'increment' && maxPlaces) {
+      config.maxPlaces += parseInt(maxPlaces);
+    } else {
+      return res.status(400).json({ error: 'Action ou valeur invalide' });
+    }
+
+    saveConfig(config);
+    MAX_INSCRIPTIONS = config.maxPlaces;
+
+    res.json({
+      success: true,
+      message: `Nombre de places mis à jour: ${config.maxPlaces}`,
+      maxPlaces: config.maxPlaces
+    });
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Route pour admin - exporter les inscriptions en CSV
 app.get('/admin/export-csv', requireAdminAuth, (req, res) => {
   try {
     const inscriptions = getInscriptions();
     
     if (inscriptions.length === 0) {
-      return res.status(400).json({ error: 'Aucune inscription à exporter' });
+      return res.status(404).json({ error: 'Aucune inscription à exporter' });
     }
 
-    // Créer le CSV
-    let csv = 'ID,Nom,Email,WhatsApp,Projet,Date\n';
-    
-    inscriptions.forEach(insc => {
-      const projet = (insc.projet || '-').replace(/"/g, '""'); // Échapper les guillemets
-      csv += `${insc.id},"${insc.nom}","${insc.email}","${insc.whatsapp}","${projet}","${insc.date}"\n`;
-    });
+    // Créer le contenu CSV
+    const headers = ['ID', 'Nom', 'Email', 'WhatsApp', 'Projet', 'Date'];
+    const csvContent = [
+      headers.join(','),
+      ...inscriptions.map(inscription => [
+        `"${inscription.id}"`,
+        `"${inscription.nom}"`,
+        `"${inscription.email}"`,
+        `"${inscription.whatsapp}"`,
+        `"${inscription.projet}"`,
+        `"${inscription.date}"`
+      ].join(','))
+    ].join('\n');
 
-    // Envoyer le fichier
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="inscriptions_' + new Date().toISOString().slice(0,10) + '.csv"');
-    res.send('\ufeff' + csv); // BOM pour UTF-8
+    // Envoyer le fichier CSV
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="inscriptions_${new Date().toISOString().slice(0,10)}.csv"`);
+    res.send(csvContent);
   } catch (error) {
-    console.error('Erreur export CSV:', error);
-    res.status(500).json({ error: 'Erreur lors de l\'export' });
+    console.error('Erreur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
-// Gestion d'erreurs globale
-app.use((err, req, res, next) => {
-  logger.error('Erreur non gérée:', err.message);
-  res.status(500).json({ 
-    error: 'Erreur serveur',
-    ...(process.env.NODE_ENV === 'development' && { details: err.message })
-  });
-});
-
-// Route 404
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route non trouvée' });
-});
-
+// Démarrer le serveur
 app.listen(PORT, () => {
   logger.info(`Serveur lancé sur http://localhost:${PORT}`);
-  logger.info(`Inscriptions: ${getInscriptions().length}/${MAX_INSCRIPTIONS}`);
-  logger.info(`Session: ${getConfig().sessionOpen ? 'OUVERTE' : 'FERMÉE'}`);
+  
+  // Log l'état initial
+  const inscriptions = getInscriptions();
+  const config = getConfig();
+  logger.info(`Inscriptions: ${inscriptions.length}/${config.maxPlaces}`);
+  logger.info(`Session: ${config.sessionOpen ? 'OUVERTE' : 'FERMÉE'}`);
 });
