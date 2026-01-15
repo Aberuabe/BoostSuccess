@@ -732,7 +732,7 @@
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         // Configuration API
-        const API_URL = 'http://localhost:3000';
+        const API_URL = window.location.origin;
 
         // Init AOS
         AOS.init({
@@ -827,7 +827,7 @@
         // Fetch actual seat count from server
         async function updateSeatCount() {
             try {
-                const response = await fetch('http://localhost:3000/api/inscriptions-count');
+                const response = await fetch(`${API_URL}/api/inscriptions-count`);
                 const data = await response.json();
                 
                 const remaining = data.max - data.count;
@@ -1177,7 +1177,7 @@
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi...';
 
-                const response = await fetch('http://localhost:3000/api/confirm-payment', {
+                const response = await fetch(`${API_URL}/api/confirm-payment`, {
                     method: 'POST',
                     body: formData
                 });
