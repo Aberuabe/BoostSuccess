@@ -20,8 +20,16 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests without origin (local files, mobile apps, etc)
     if (!origin) return callback(null, true);
-    
-    const allowedOrigins = ['http://localhost:3000', 'http://localhost', 'http://127.0.0.1:3000', 'http://127.0.0.1'];
+
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1',
+      'https://boostsuccess.onrender.com'  // Ajout de l'URL de Render
+    ];
+
+    // Autoriser l'origine si elle est dans la liste ou si on n'est pas en production
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
