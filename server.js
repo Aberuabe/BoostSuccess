@@ -12,6 +12,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configuration pour les déploiements derrière un proxy (comme Heroku, Render, etc.)
+app.set('trust proxy', 1); // Pour faire confiance à l'en-tête X-Forwarded-For
+
 // Middleware de sécurité - CORS
 const corsOptions = {
   origin: function (origin, callback) {
