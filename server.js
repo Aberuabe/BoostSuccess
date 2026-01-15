@@ -121,6 +121,9 @@ if (EMAIL_USER && EMAIL_PASSWORD) {
       auth: {
         user: EMAIL_USER,
         pass: EMAIL_PASSWORD // Mot de passe d'application, pas le mot de passe du compte
+      },
+      tls: {
+        rejectUnauthorized: false // Permettre les connexions avec des certificats auto-signés
       }
     });
 
