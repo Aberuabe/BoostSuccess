@@ -107,7 +107,7 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
 });
 
-// Initialiser Nodemailer pour Email
+// Initialiser Nodemailer pour Email via SMTP
 let emailTransporter = null;
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
@@ -115,13 +115,23 @@ const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
 if (EMAIL_USER && EMAIL_PASSWORD) {
   try {
     emailTransporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // true for 465, false for other ports
       auth: {
         user: EMAIL_USER,
-        pass: EMAIL_PASSWORD
+        pass: EMAIL_PASSWORD // Mot de passe d'application, pas le mot de passe du compte
       }
     });
-    console.log('✅ Email (Nodemailer) initialisé');
+
+    // Tester la connexion
+    emailTransporter.verify((error, success) => {
+      if (error) {
+        console.error('❌ Erreur de connexion SMTP:', error);
+      } else {
+        console.log('✅ Serveur SMTP prêt à envoyer des emails');
+      }
+    });
   } catch (error) {
     console.warn('⚠️ Email non disponible:', error.message);
   }
