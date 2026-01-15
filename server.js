@@ -760,67 +760,45 @@ ${method === 'transaction-id' ? `🔑 <b>ID Transaction:</b> <code>${transaction
 <b>Vérifiez dans l'admin et approuvez.</b>
     `;
 
-    // Notification par email à l'administrateur (envoyée de manière asynchrone pour ne pas bloquer la réponse)
-    const adminEmail = process.env.EMAIL_USER; // Utiliser l'email admin défini dans .env
-    if (adminEmail) {
-      // On lance l'envoi de l'email dans une promesse séparée pour ne pas bloquer la réponse
-      const emailPromise = (async () => {
+    // Notification via Telegram à l'administrateur (envoyée de manière asynchrone pour ne pas bloquer la réponse)
+    const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN; // Token du bot Telegram
+    const adminChatId = process.env.TELEGRAM_CHAT_ID; // ID du chat de l'administrateur
+
+    if (telegramBotToken && adminChatId) {
+      // On lance l'envoi de la notification dans une promesse séparée pour ne pas bloquer la réponse
+      const telegramPromise = (async () => {
         try {
-          const adminEmailHtml = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
-                    .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
-                    .header { background: #00d4ff; color: white; padding: 15px; text-align: center; border-radius: 5px 5px 0 0; }
-                    .content { padding: 20px; }
-                    .info-box { background: #f0f9ff; border-left: 4px solid #00d4ff; padding: 15px; margin: 15px 0; }
-                    .footer { text-align: center; padding: 20px; color: #666; font-size: 0.9em; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h2>🔔 Nouveau Paiement en Attente</h2>
-                    </div>
-                    <div class="content">
-                        <p>Un nouveau paiement est en attente de vérification dans votre dashboard admin.</p>
+          // Format du message Telegram
+          const telegramMessage = `🔔 <b>NOUVEAU PAIEMENT EN ATTENTE DE VÉRIFICATION</b>\n\n` +
+            `📝 <b>Nom:</b> ${nom}\n` +
+            `📧 <b>Email:</b> ${email}\n` +
+            `📱 <b>WhatsApp:</b> ${whatsapp}\n` +
+            `🚀 <b>Projet:</b> ${projet.substring(0, 100)}${projet.length > 100 ? '...' : ''}\n` +
+            `📌 <b>Méthode:</b> ${method === 'screenshot' ? 'Screenshot' : 'ID de Transaction'}\n` +
+            `${method === 'transaction-id' && transactionId ? `<b>ID Transaction:</b> ${transactionId}\n` : ''}` +
+            `📅 <b>Date:</b> ${new Date().toLocaleString('fr-FR')}\n\n` +
+            `👉 <b>Connectez-vous à votre dashboard admin pour approuver ou rejeter ce paiement.</b>`;
 
-                        <div class="info-box">
-                            <h3>Informations du client :</h3>
-                            <p><strong>Nom:</strong> ${nom}</p>
-                            <p><strong>Email:</strong> ${email}</p>
-                            <p><strong>WhatsApp:</strong> ${whatsapp}</p>
-                            <p><strong>Projet:</strong> ${projet.substring(0, 100)}${projet.length > 100 ? '...' : ''}</p>
-                            <p><strong>Méthode de paiement:</strong> ${method === 'screenshot' ? 'Screenshot' : 'ID de Transaction'}</p>
-                            ${method === 'transaction-id' && transactionId ? `<p><strong>ID Transaction:</strong> ${transactionId}</p>` : ''}
-                            <p><strong>Date:</strong> ${new Date().toLocaleString('fr-FR')}</p>
-                        </div>
+          // Envoyer la notification via l'API Telegram
+          const response = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              chat_id: adminChatId,
+              text: telegramMessage,
+              parse_mode: 'HTML'
+            })
+          });
 
-                        <p><strong>Action requise:</strong> Connectez-vous à votre dashboard admin pour approuver ou rejeter ce paiement.</p>
-
-                        <p style="text-align: center; margin: 20px 0;">
-                            <a href="${process.env.APP_URL || 'https://boostsuccess.onrender.com'}/admin-login.html"
-                               style="background: #00d4ff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                                Accéder au Dashboard Admin
-                            </a>
-                        </p>
-                    </div>
-                    <div class="footer">
-                        <p>Ce message a été envoyé automatiquement par le système Boost & Success</p>
-                        <p>Ne répondez pas à cet email - Utilisez le dashboard admin pour traiter les paiements</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-          `;
-
-          await sendEmail(adminEmail, '🔔 Nouveau Paiement en Attente de Vérification', adminEmailHtml);
-          console.log('📧 Notification email envoyée à l\'administrateur');
-        } catch (emailError) {
-          console.error('❌ Erreur envoi email admin:', emailError.message);
+          if (response.ok) {
+            console.log('✅ Notification Telegram envoyée à l\'administrateur');
+          } else {
+            console.error('❌ Erreur envoi notification Telegram:', await response.text());
+          }
+        } catch (telegramError) {
+          console.error('❌ Erreur envoi notification Telegram:', telegramError.message);
         }
       })();
     }
