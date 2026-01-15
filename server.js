@@ -387,13 +387,17 @@ async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachment
 // Route pour initialiser/mettre à jour le mot de passe admin (une seule fois au démarrage)
 async function initAdminPassword() {
   try {
+    // Si le fichier admin-password.json n'existe pas, créer avec le mot de passe par défaut
     if (!fs.existsSync(ADMIN_FILE)) {
-      const plainPassword = process.env.ADMIN_PASSWORD || 'admin123'; // À changer en .env
+      const plainPassword = process.env.ADMIN_PASSWORD || 'Admin@12346'; // Mot de passe par défaut mis à jour
       const hashedPassword = await bcrypt.hash(plainPassword, 10);
-      
+
       const adminConfig = { password: hashedPassword };
       fs.writeFileSync(ADMIN_FILE, JSON.stringify(adminConfig, null, 2));
       logger.info('Mot de passe admin haché et sauvegardé');
+    } else {
+      // Si le fichier existe, on ne fait rien pour préserver le mot de passe existant
+      logger.info('Fichier admin-password.json existe déjà, mot de passe inchangé');
     }
   } catch (error) {
     logger.error('Erreur initialisation password:', error.message);
