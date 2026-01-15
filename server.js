@@ -329,7 +329,8 @@ function requireAdminAuth(req, res, next) {
 
 // Fonction pour envoyer un email via Resend
 async function sendEmailViaAPI(toEmail, subject, htmlContent) {
-  if (!RESEND_API_KEY) {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
     console.warn('⚠️ Clé API Resend non configurée.');
     console.warn('   Configurez RESEND_API_KEY dans les variables d\'environnement');
     return false;
@@ -349,7 +350,7 @@ async function sendEmailViaAPI(toEmail, subject, htmlContent) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`
+        'Authorization': `Bearer ${resendApiKey}`
       },
       body: JSON.stringify(emailData)
     });
@@ -393,66 +394,13 @@ async function sendEmailSMTP(toEmail, subject, htmlContent) {
   }
 }
 
-// Fonction pour envoyer un email (utilise soit l'API Resend, soit SMTP)
+// Fonction pour envoyer un email (utilise uniquement SMTP)
 async function sendEmail(toEmail, subject, htmlContent) {
-  // Essayer d'abord via Resend
-  if (RESEND_API_KEY) {
-    return await sendEmailViaAPI(toEmail, subject, htmlContent);
-  }
-  // Sinon essayer via SMTP
-  else {
-    return await sendEmailSMTP(toEmail, subject, htmlContent);
-  }
+  // Utiliser uniquement SMTP
+  return await sendEmailSMTP(toEmail, subject, htmlContent);
 }
 
-// Fonction pour envoyer un email avec pièce jointe via Resend
-async function sendEmailWithAttachmentViaAPI(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
-  if (!RESEND_API_KEY) {
-    console.warn('⚠️ Clé API Resend non configurée.');
-    console.warn('   Configurez RESEND_API_KEY dans les variables d\'environnement');
-    return false;
-  }
 
-  try {
-    console.log(`📧 Envoi email avec pièce jointe via Resend à ${toEmail}...`);
-
-    // Lire le fichier PDF
-    const pdfBuffer = fs.readFileSync(attachmentPath);
-    const pdfBase64 = pdfBuffer.toString('base64');
-
-    const emailData = {
-      from: process.env.EMAIL_FROM || 'onboarding@resend.dev', // Remplacez par votre adresse vérifiée
-      to: toEmail,
-      subject: subject,
-      html: htmlContent,
-      attachments: [{
-        filename: attachmentName,
-        type: 'application/pdf',
-        content: pdfBase64
-      }]
-    };
-
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`
-      },
-      body: JSON.stringify(emailData)
-    });
-
-    if (response.ok) {
-      console.log(`✅ Email avec pièce jointe envoyé via Resend à ${toEmail}`);
-      return true;
-    } else {
-      console.error(`❌ Erreur Resend Email avec pièce jointe: ${response.status} - ${await response.text()}`);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Erreur envoi email avec pièce jointe via Resend:', error.message);
-    return false;
-  }
-}
 
 // Fonction pour envoyer un email avec pièce jointe via SMTP
 async function sendEmailWithAttachmentSMTP(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
@@ -490,16 +438,10 @@ async function sendEmailWithAttachmentSMTP(toEmail, subject, htmlContent, attach
   }
 }
 
-// Fonction pour envoyer un email avec pièce jointe (utilise soit l'API Resend, soit SMTP)
+// Fonction pour envoyer un email avec pièce jointe (utilise uniquement SMTP)
 async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
-  // Essayer d'abord via Resend
-  if (RESEND_API_KEY) {
-    return await sendEmailWithAttachmentViaAPI(toEmail, subject, htmlContent, attachmentName, attachmentPath);
-  }
-  // Sinon essayer via SMTP
-  else {
-    return await sendEmailWithAttachmentSMTP(toEmail, subject, htmlContent, attachmentName, attachmentPath);
-  }
+  // Utiliser uniquement SMTP
+  return await sendEmailWithAttachmentSMTP(toEmail, subject, htmlContent, attachmentName, attachmentPath);
 }
 
 
