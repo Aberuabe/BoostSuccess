@@ -780,9 +780,18 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
     // Sauvegarder le lien du groupe si fourni
     let groupLinksData = [];
     if (fs.existsSync(groupLinksFile)) {
-      groupLinksData = JSON.parse(fs.readFileSync(groupLinksFile, 'utf8'));
+      const rawData = fs.readFileSync(groupLinksFile, 'utf8');
+      try {
+        const parsedData = JSON.parse(rawData);
+        // S'assurer que groupLinksData est un tableau
+        groupLinksData = Array.isArray(parsedData) ? parsedData : [];
+      } catch (parseError) {
+        console.error('Erreur parsing group-links.json:', parseError.message);
+        // Si le fichier est corrompu, initialiser avec un tableau vide
+        groupLinksData = [];
+      }
     }
-    
+
     if (groupLink) {
       groupLinksData.push({
         id: payment.id,
