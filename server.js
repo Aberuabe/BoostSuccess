@@ -139,8 +139,7 @@ const INSCRIPTIONS_FILE = path.join(__dirname, 'inscriptions.json');
 const CONFIG_FILE = path.join(__dirname, 'config.json');
 const ADMIN_FILE = path.join(__dirname, 'admin-password.json');
 
-// Configuration pour l'envoi d'e-mails via Resend
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
+// Aucune configuration supplémentaire requise - les notifications sont gérées via Telegram
 
 // Admin sessions (stocké en mémoire, réinitialisation au redémarrage du serveur)
 const adminSessions = new Map();
