@@ -139,9 +139,8 @@ const INSCRIPTIONS_FILE = path.join(__dirname, 'inscriptions.json');
 const CONFIG_FILE = path.join(__dirname, 'config.json');
 const ADMIN_FILE = path.join(__dirname, 'admin-password.json');
 
-// Configuration pour l'envoi d'e-mails via API
-const EMAIL_API_KEY = process.env.EMAIL_API_KEY;
-const EMAIL_API_URL = process.env.EMAIL_API_URL;
+// Configuration pour l'envoi d'e-mails via Resend
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
 // Admin sessions (stocké en mémoire, réinitialisation au redémarrage du serveur)
 const adminSessions = new Map();
@@ -329,47 +328,42 @@ function requireAdminAuth(req, res, next) {
   next();
 }
 
-// Fonction pour envoyer un email via SendGrid
+// Fonction pour envoyer un email via Resend
 async function sendEmailViaAPI(toEmail, subject, htmlContent) {
-  if (!EMAIL_API_KEY) {
-    console.warn('⚠️ Clé API SendGrid non configurée.');
-    console.warn('   Configurez EMAIL_API_KEY dans les variables d\'environnement');
+  if (!RESEND_API_KEY) {
+    console.warn('⚠️ Clé API Resend non configurée.');
+    console.warn('   Configurez RESEND_API_KEY dans les variables d\'environnement');
     return false;
   }
 
   try {
-    console.log(`📧 Envoi email via SendGrid à ${toEmail}...`);
+    console.log(`📧 Envoi email via Resend à ${toEmail}...`);
 
     const emailData = {
-      personalizations: [{
-        to: [{ email: toEmail }],
-        subject: subject
-      }],
-      from: { email: process.env.EMAIL_FROM || 'YOUR_VERIFIED_SENDER@yourdomain.com' }, // Remplacez par votre adresse vérifiée
-      content: [{
-        type: 'text/html',
-        value: htmlContent
-      }]
+      from: process.env.EMAIL_FROM || 'onboarding@resend.dev', // Remplacez par votre adresse vérifiée
+      to: toEmail,
+      subject: subject,
+      html: htmlContent
     };
 
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${EMAIL_API_KEY}`
+        'Authorization': `Bearer ${RESEND_API_KEY}`
       },
       body: JSON.stringify(emailData)
     });
 
     if (response.ok) {
-      console.log(`✅ Email envoyé via SendGrid à ${toEmail}`);
+      console.log(`✅ Email envoyé via Resend à ${toEmail}`);
       return true;
     } else {
-      console.error(`❌ Erreur SendGrid: ${response.status} - ${await response.text()}`);
+      console.error(`❌ Erreur Resend: ${response.status} - ${await response.text()}`);
       return false;
     }
   } catch (error) {
-    console.error('❌ Erreur envoi email via SendGrid:', error.message);
+    console.error('❌ Erreur envoi email via Resend:', error.message);
     return false;
   }
 }
@@ -400,10 +394,10 @@ async function sendEmailSMTP(toEmail, subject, htmlContent) {
   }
 }
 
-// Fonction pour envoyer un email (utilise soit l'API, soit SMTP)
+// Fonction pour envoyer un email (utilise soit l'API Resend, soit SMTP)
 async function sendEmail(toEmail, subject, htmlContent) {
-  // Essayer d'abord via l'API
-  if (EMAIL_API_KEY && EMAIL_API_URL) {
+  // Essayer d'abord via Resend
+  if (RESEND_API_KEY) {
     return await sendEmailViaAPI(toEmail, subject, htmlContent);
   }
   // Sinon essayer via SMTP
@@ -412,31 +406,26 @@ async function sendEmail(toEmail, subject, htmlContent) {
   }
 }
 
-// Fonction pour envoyer un email avec pièce jointe via SendGrid
+// Fonction pour envoyer un email avec pièce jointe via Resend
 async function sendEmailWithAttachmentViaAPI(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
-  if (!EMAIL_API_KEY) {
-    console.warn('⚠️ Clé API SendGrid non configurée.');
-    console.warn('   Configurez EMAIL_API_KEY dans les variables d\'environnement');
+  if (!RESEND_API_KEY) {
+    console.warn('⚠️ Clé API Resend non configurée.');
+    console.warn('   Configurez RESEND_API_KEY dans les variables d\'environnement');
     return false;
   }
 
   try {
-    console.log(`📧 Envoi email avec pièce jointe via SendGrid à ${toEmail}...`);
+    console.log(`📧 Envoi email avec pièce jointe via Resend à ${toEmail}...`);
 
     // Lire le fichier PDF
     const pdfBuffer = fs.readFileSync(attachmentPath);
     const pdfBase64 = pdfBuffer.toString('base64');
 
     const emailData = {
-      personalizations: [{
-        to: [{ email: toEmail }],
-        subject: subject
-      }],
-      from: { email: process.env.EMAIL_FROM || 'YOUR_VERIFIED_SENDER@yourdomain.com' }, // Remplacez par votre adresse vérifiée
-      content: [{
-        type: 'text/html',
-        value: htmlContent
-      }],
+      from: process.env.EMAIL_FROM || 'onboarding@resend.dev', // Remplacez par votre adresse vérifiée
+      to: toEmail,
+      subject: subject,
+      html: htmlContent,
       attachments: [{
         filename: attachmentName,
         type: 'application/pdf',
@@ -444,24 +433,24 @@ async function sendEmailWithAttachmentViaAPI(toEmail, subject, htmlContent, atta
       }]
     };
 
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${EMAIL_API_KEY}`
+        'Authorization': `Bearer ${RESEND_API_KEY}`
       },
       body: JSON.stringify(emailData)
     });
 
     if (response.ok) {
-      console.log(`✅ Email avec pièce jointe envoyé via SendGrid à ${toEmail}`);
+      console.log(`✅ Email avec pièce jointe envoyé via Resend à ${toEmail}`);
       return true;
     } else {
-      console.error(`❌ Erreur SendGrid Email avec pièce jointe: ${response.status} - ${await response.text()}`);
+      console.error(`❌ Erreur Resend Email avec pièce jointe: ${response.status} - ${await response.text()}`);
       return false;
     }
   } catch (error) {
-    console.error('❌ Erreur envoi email avec pièce jointe via SendGrid:', error.message);
+    console.error('❌ Erreur envoi email avec pièce jointe via Resend:', error.message);
     return false;
   }
 }
@@ -502,10 +491,10 @@ async function sendEmailWithAttachmentSMTP(toEmail, subject, htmlContent, attach
   }
 }
 
-// Fonction pour envoyer un email avec pièce jointe (utilise soit l'API, soit SMTP)
+// Fonction pour envoyer un email avec pièce jointe (utilise soit l'API Resend, soit SMTP)
 async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
-  // Essayer d'abord via l'API
-  if (EMAIL_API_KEY && EMAIL_API_URL) {
+  // Essayer d'abord via Resend
+  if (RESEND_API_KEY) {
     return await sendEmailWithAttachmentViaAPI(toEmail, subject, htmlContent, attachmentName, attachmentPath);
   }
   // Sinon essayer via SMTP
