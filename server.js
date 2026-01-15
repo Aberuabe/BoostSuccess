@@ -689,7 +689,7 @@ ${method === 'transaction-id' ? `🔑 <b>ID Transaction:</b> <code>${transaction
                         <p><strong>Action requise:</strong> Connectez-vous à votre dashboard admin pour approuver ou rejeter ce paiement.</p>
 
                         <p style="text-align: center; margin: 20px 0;">
-                            <a href="${process.env.APP_URL || window.location.origin}/admin-login.html"
+                            <a href="${process.env.APP_URL || 'https://boostsuccess.onrender.com'}/admin-login.html"
                                style="background: #00d4ff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
                                 Accéder au Dashboard Admin
                             </a>
