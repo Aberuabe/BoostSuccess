@@ -111,13 +111,16 @@ const upload = multer({
 let emailTransporter = null;
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
+const SMTP_PORT = process.env.SMTP_PORT || 587;
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
 
 if (EMAIL_USER && EMAIL_PASSWORD) {
   try {
     emailTransporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // true for 465, false for other ports
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_SECURE, // true for 465, false for other ports
       auth: {
         user: EMAIL_USER,
         pass: EMAIL_PASSWORD // Mot de passe d'application, pas le mot de passe du compte
