@@ -351,7 +351,7 @@ async function sendEmail(toEmail, subject, htmlContent) {
   const senderEmail = process.env.EMAIL_FROM;
 
   if (!resendApiKey || !senderEmail) {
-    console.warn('⚠️ Clé API Resend ou adresse e-mail non configurée');
+    console.warn('⚠️ Clé API Resend ou adresse e-mail non configurée. Vérifiez RESEND_API_KEY et EMAIL_FROM dans les variables d\'environnement.');
     return false;
   }
 
@@ -390,7 +390,7 @@ async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachment
   const senderEmail = process.env.EMAIL_FROM;
 
   if (!resendApiKey || !senderEmail) {
-    console.warn('⚠️ Clé API Resend ou adresse e-mail non configurée');
+    console.warn('⚠️ Clé API Resend ou adresse e-mail non configurée. Vérifiez RESEND_API_KEY et EMAIL_FROM dans les variables d\'environnement.');
     return false;
   }
 
