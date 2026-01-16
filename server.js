@@ -3,7 +3,6 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-const nodemailer = require('nodemailer');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const PDFDocument = require('pdfkit');
@@ -13,8 +12,8 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuration pour les déploiements derrière un proxy (comme Heroku, Render, etc.)
-app.set('trust proxy', 1); // Pour faire confiance à l'en-tête X-Forwarded-For
+// Configuration pour les déploiements derrière un proxy
+app.set('trust proxy', 1);
 
 // Middleware de sécurité - CORS
 const corsOptions = {
@@ -27,7 +26,7 @@ const corsOptions = {
       'http://localhost',
       'http://127.0.0.1:3000',
       'http://127.0.0.1',
-      'https://boostsuccess.onrender.com'  // Ajout de l'URL de Render
+      'https://boostsuccess.onrender.com'
     ];
 
     // Autoriser l'origine si elle est dans la liste ou si on n'est pas en production
@@ -107,44 +106,6 @@ const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
 });
-
-// Initialiser Nodemailer pour Email via SMTP
-let emailTransporter = null;
-const EMAIL_USER = process.env.EMAIL_USER;
-const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
-const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
-const SMTP_PORT = process.env.SMTP_PORT || 587;
-const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
-
-if (EMAIL_USER && EMAIL_PASSWORD) {
-  try {
-    emailTransporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_SECURE, // true for 465, false for other ports
-      auth: {
-        user: EMAIL_USER,
-        pass: EMAIL_PASSWORD // Mot de passe d'application, pas le mot de passe du compte
-      },
-      tls: {
-        rejectUnauthorized: false // Permettre les connexions avec des certificats auto-signés
-      }
-    });
-
-    // Tester la connexion
-    emailTransporter.verify((error, success) => {
-      if (error) {
-        console.error('❌ Erreur de connexion SMTP:', error);
-      } else {
-        console.log('✅ Serveur SMTP prêt à envoyer des emails');
-      }
-    });
-  } catch (error) {
-    console.warn('⚠️ Email non disponible:', error.message);
-  }
-} else {
-  console.warn('⚠️ Email non configuré. Configurez EMAIL_USER et EMAIL_PASSWORD dans .env');
-}
 
 // Fichiers de données
 const INSCRIPTIONS_FILE = path.join(__dirname, 'inscriptions.json');
@@ -960,7 +921,8 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
     const emailSent = await sendEmail(
       payment.email,
       '❌ Votre preuve de paiement a été rejetée',
-      rejectionEmailHtml
+      rejectionEmailHtml,
+      process.env.EMAILJS_TEMPLATE_REJECTION_ID
     );
 
     if (!emailSent) {
