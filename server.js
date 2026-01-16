@@ -7,6 +7,7 @@ const nodemailer = require('nodemailer');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const PDFDocument = require('pdfkit');
+const emailjs = require('@emailjs/nodejs');
 require('dotenv').config();
 
 const app = express();
@@ -345,90 +346,94 @@ function requireAdminAuth(req, res, next) {
   next();
 }
 
-// Fonctions d'envoi d'e-mails (uniquement via SMTP)
-async function sendEmail(toEmail, subject, htmlContent) {
-  const resendApiKey = process.env.RESEND_API_KEY;
-  const senderEmail = process.env.EMAIL_FROM;
+// Fonctions d'envoi d'e-mails via EmailJS
+async function sendEmail(toEmail, subject, htmlContent, templateId = process.env.EMAILJS_TEMPLATE_APPROVAL_ID) {
+  const emailjsServiceId = process.env.EMAILJS_SERVICE_ID;
+  const emailjsUserId = process.env.EMAILJS_USER_ID;
 
-  if (!resendApiKey || !senderEmail) {
-    console.warn('⚠️ Clé API Resend ou adresse e-mail non configurée. Vérifiez RESEND_API_KEY et EMAIL_FROM dans les variables d\'environnement.');
+  if (!emailjsServiceId || !templateId || !emailjsUserId) {
+    console.warn('⚠️ Identifiants EmailJS non configurés. Vérifiez EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_APPROVAL_ID et EMAILJS_USER_ID dans les variables d\'environnement.');
     return false;
   }
 
   try {
-    console.log(`📧 Envoi email via Resend API à ${toEmail}...`);
+    console.log(`📧 Envoi email via EmailJS à ${toEmail}...`);
 
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${resendApiKey}`
-      },
-      body: JSON.stringify({
-        from: senderEmail,
-        to: toEmail,
-        subject: subject,
-        html: htmlContent
-      })
-    });
+    // Configuration de EmailJS
+    emailjs.init(emailjsUserId);
 
-    if (response.ok) {
-      console.log(`✅ Email envoyé via Resend API à ${toEmail}`);
+    // Paramètres de l'e-mail
+    const templateParams = {
+      to_email: toEmail,
+      subject: subject,
+      html_content: htmlContent
+    };
+
+    // Envoi de l'e-mail
+    const response = await emailjs.send(
+      emailjsServiceId,
+      templateId,
+      templateParams
+    );
+
+    if (response.status === 200) {
+      console.log(`✅ Email envoyé via EmailJS à ${toEmail}`);
       return true;
     } else {
-      console.error(`❌ Erreur Resend API: ${response.status} - ${await response.text()}`);
+      console.error(`❌ Erreur EmailJS: ${response.status} - ${response.text}`);
       return false;
     }
   } catch (error) {
-    console.error('❌ Erreur envoi email via Resend API:', error.message);
+    console.error('❌ Erreur envoi email via EmailJS:', error.message);
     return false;
   }
 }
 
 async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
-  const resendApiKey = process.env.RESEND_API_KEY;
-  const senderEmail = process.env.EMAIL_FROM;
+  const emailjsServiceId = process.env.EMAILJS_SERVICE_ID;
+  const emailjsTemplateId = process.env.EMAILJS_TEMPLATE_APPROVAL_ID;
+  const emailjsUserId = process.env.EMAILJS_USER_ID;
 
-  if (!resendApiKey || !senderEmail) {
-    console.warn('⚠️ Clé API Resend ou adresse e-mail non configurée. Vérifiez RESEND_API_KEY et EMAIL_FROM dans les variables d\'environnement.');
+  if (!emailjsServiceId || !emailjsTemplateId || !emailjsUserId) {
+    console.warn('⚠️ Identifiants EmailJS non configurés. Vérifiez EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_APPROVAL_ID et EMAILJS_USER_ID dans les variables d\'environnement.');
     return false;
   }
 
   try {
-    console.log(`📧 Envoi email avec pièce jointe via Resend API à ${toEmail}...`);
+    console.log(`📧 Envoi email avec pièce jointe via EmailJS à ${toEmail}...`);
 
     // Lire le fichier PDF
     const pdfBuffer = fs.readFileSync(attachmentPath);
     const pdfBase64 = pdfBuffer.toString('base64');
 
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${resendApiKey}`
-      },
-      body: JSON.stringify({
-        from: senderEmail,
-        to: toEmail,
-        subject: subject,
-        html: htmlContent,
-        attachments: [{
-          filename: attachmentName,
-          content: pdfBase64,
-          type: 'application/pdf'
-        }]
-      })
-    });
+    // Configuration de EmailJS
+    emailjs.init(emailjsUserId);
 
-    if (response.ok) {
-      console.log(`✅ Email avec pièce jointe envoyé via Resend API à ${toEmail}`);
+    // Paramètres de l'e-mail avec pièce jointe
+    const templateParams = {
+      to_email: toEmail,
+      subject: subject,
+      html_content: htmlContent,
+      attachment_name: attachmentName,
+      attachment_content: pdfBase64
+    };
+
+    // Envoi de l'e-mail
+    const response = await emailjs.send(
+      emailjsServiceId,
+      emailjsTemplateId,
+      templateParams
+    );
+
+    if (response.status === 200) {
+      console.log(`✅ Email avec pièce jointe envoyé via EmailJS à ${toEmail}`);
       return true;
     } else {
-      console.error(`❌ Erreur Resend API avec pièce jointe: ${response.status} - ${await response.text()}`);
+      console.error(`❌ Erreur EmailJS avec pièce jointe: ${response.status} - ${response.text}`);
       return false;
     }
   } catch (error) {
-    console.error('❌ Erreur envoi email avec pièce jointe via Resend API:', error.message);
+    console.error('❌ Erreur envoi email avec pièce jointe via EmailJS:', error.message);
     return false;
   }
 }
