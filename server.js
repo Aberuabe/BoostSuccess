@@ -6,7 +6,7 @@ const multer = require('multer');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const PDFDocument = require('pdfkit');
-const emailjs = require('@emailjs/browser');
+const emailjs = require('emailjs');
 require('dotenv').config();
 
 const app = express();
@@ -18,7 +18,6 @@ app.set('trust proxy', 1);
 // Middleware de sécurité - CORS
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests without origin (local files, mobile apps, etc)
     if (!origin) return callback(null, true);
 
     const allowedOrigins = [
@@ -29,7 +28,6 @@ const corsOptions = {
       'https://boostsuccess.onrender.com'
     ];
 
-    // Autoriser l'origine si elle est dans la liste ou si on n'est pas en production
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
