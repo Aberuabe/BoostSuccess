@@ -6,7 +6,7 @@ const multer = require('multer');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const PDFDocument = require('pdfkit');
-const emailjs = require('emailjs');
+const emailjs = require('@emailjs/nodejs');
 require('dotenv').config();
 
 const app = express();
