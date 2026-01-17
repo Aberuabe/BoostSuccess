@@ -1353,12 +1353,12 @@ async function startServer() {
     // Initialiser les données
     await initializeData();
 
-    app.listen(port, () => {
+    app.listen(port, async () => {
       logger.info(`Serveur lancé sur le port ${port}`);
 
       // Log l'état initial
-      const inscriptions = getInscriptions();
-      const config = getConfig();
+      const inscriptions = await getInscriptions();
+      const config = await getConfig();
       logger.info(`Inscriptions: ${inscriptions.length}/${config.maxPlaces}`);
       logger.info(`Session: ${config.sessionOpen ? 'OUVERTE' : 'FERMÉE'}`);
     });
