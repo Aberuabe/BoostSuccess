@@ -422,11 +422,21 @@ async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachment
     };
 
     // Ajouter la pièce jointe si elle existe
-    if (attachmentPath && fs.existsSync(attachmentPath)) {
-      mailOptions.attachments = [{
-        filename: attachmentName,
-        path: attachmentPath
-      }];
+    if (attachmentPath) {
+      if (typeof attachmentPath === 'string' && fs.existsSync(attachmentPath)) {
+        // Si c'est un chemin de fichier existant
+        mailOptions.attachments = [{
+          filename: attachmentName,
+          path: attachmentPath
+        }];
+      } else if (Buffer.isBuffer(attachmentPath)) {
+        // Si c'est un buffer (comme dans notre cas avec le PDF généré)
+        mailOptions.attachments = [{
+          filename: attachmentName,
+          content: attachmentPath,
+          contentType: 'application/pdf'
+        }];
+      }
     }
 
     await emailTransporter.sendMail(mailOptions);
@@ -775,9 +785,8 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
       console.log(`✅ Lien du groupe sauvegardé pour ${payment.nom}`);
     }
 
-    // Générer et sauvegarder le PDF d'acceptation pour archivage
+    // Générer le PDF d'acceptation
     const acceptancePdfBuffer = await generateAcceptancePDF(payment.nom, payment.email, payment.whatsapp);
-    const pdfPath = saveSignedPDF(payment.nom, payment.email, payment.whatsapp, acceptancePdfBuffer);
 
     // Envoyer email de confirmation au client
     const groupLinkSection = groupLink ? `
@@ -832,13 +841,13 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
       </html>
     `;
 
-    // Envoyer l'email avec le PDF joint
+    // Envoyer l'email avec le PDF joint (directement depuis le buffer, sans sauvegarder sur le disque)
     const emailSent = await sendEmailWithAttachment(
       payment.email,
       '✅ Votre inscription Boost & Success est approuvée!',
       emailHtml,
-      pdfPath ? path.basename(pdfPath) : null,
-      pdfPath
+      `acceptance_${payment.nom.replace(/\s+/g, '_')}_${Date.now()}.pdf`,  // attachmentName
+      acceptancePdfBuffer  // attachmentPath (utilisation directe du buffer)
     );
 
     if (!emailSent) {
