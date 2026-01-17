@@ -143,28 +143,56 @@ if (EMAIL_USER && EMAIL_PASSWORD && SMTP_HOST && SMTP_PORT) {
   console.warn('⚠️ Configuration SMTP incomplète. Configurez EMAIL_USER, EMAIL_PASSWORD, SMTP_HOST et SMTP_PORT dans les variables d\'environnement.');
 }
 
-// Fichiers de données
-const INSCRIPTIONS_FILE = path.join(__dirname, 'inscriptions.json');
-const CONFIG_FILE = path.join(__dirname, 'config.json');
-const ADMIN_FILE = path.join(__dirname, 'admin-password.json');
-const PENDING_PAYMENTS_FILE = path.join(__dirname, 'pending-payments.json');
-const GROUP_LINKS_FILE = path.join(__dirname, 'group-links.json');
+// Stockage en mémoire (simule les fichiers JSON pour l'environnement serverless)
+let inscriptionsData = [];
+let configData = { maxPlaces: 5, sessionOpen: true };
+let adminPassword = null;
+let pendingPaymentsData = [];
+let groupLinksData = { groups: [] };
+
+// Charger les données au démarrage
+function initializeData() {
+  try {
+    // Charger les données depuis les fichiers s'ils existent
+    if (fs.existsSync(path.join(__dirname, 'inscriptions.json'))) {
+      inscriptionsData = JSON.parse(fs.readFileSync(path.join(__dirname, 'inscriptions.json'), 'utf8'));
+    }
+
+    if (fs.existsSync(path.join(__dirname, 'config.json'))) {
+      configData = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
+    }
+
+    if (fs.existsSync(path.join(__dirname, 'admin-password.json'))) {
+      const adminFileData = JSON.parse(fs.readFileSync(path.join(__dirname, 'admin-password.json'), 'utf8'));
+      adminPassword = adminFileData.password;
+    }
+
+    if (fs.existsSync(path.join(__dirname, 'pending-payments.json'))) {
+      pendingPaymentsData = JSON.parse(fs.readFileSync(path.join(__dirname, 'pending-payments.json'), 'utf8'));
+    }
+
+    if (fs.existsSync(path.join(__dirname, 'group-links.json'))) {
+      groupLinksData = JSON.parse(fs.readFileSync(path.join(__dirname, 'group-links.json'), 'utf8'));
+    }
+  } catch (error) {
+    console.error('Erreur chargement données:', error.message);
+  }
+}
+
+initializeData();
 
 // Sessions admin (stocké en mémoire, réinitialisation au redémarrage du serveur)
 const adminSessions = new Map();
 
 // Charger la configuration
 function getConfig() {
-  if (!fs.existsSync(CONFIG_FILE)) {
-    const defaultConfig = { maxPlaces: 5, sessionOpen: true };
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaultConfig, null, 2));
-    return defaultConfig;
-  }
-  return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+  return configData;
 }
 
 function saveConfig(config) {
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+  configData = { ...config }; // Sauvegarder en mémoire
+  // En environnement serverless, on ne sauvegarde pas sur le disque
+  // Les données sont perdues au redémarrage, mais c'est acceptable pour un test
 }
 
 let MAX_INSCRIPTIONS = getConfig().maxPlaces;
@@ -304,8 +332,7 @@ Ce document serve de preuve d'acceptation des conditions par le client.
 
 // Fonction pour lire les inscriptions
 function getInscriptions() {
-   const data = fs.readFileSync(INSCRIPTIONS_FILE, 'utf8');
-   return JSON.parse(data);
+   return inscriptionsData;
 }
 
 // Fonction pour sauvegarder une inscription
@@ -316,7 +343,8 @@ function saveInscription(userData) {
     ...userData,
     date: new Date().toLocaleString('fr-FR')
   });
-  fs.writeFileSync(INSCRIPTIONS_FILE, JSON.stringify(inscriptions, null, 2));
+  // En environnement serverless, on ne sauvegarde pas sur le disque
+  // Les données sont perdues au redémarrage, mais c'est acceptable pour un test
   return inscriptions.length;
 }
 
@@ -405,17 +433,15 @@ async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachment
 // Route pour initialiser/mettre à jour le mot de passe admin (une seule fois au démarrage)
 async function initAdminPassword() {
   try {
-    // Si le fichier admin-password.json n'existe pas, créer avec le mot de passe par défaut
-    if (!fs.existsSync(ADMIN_FILE)) {
+    // Si le mot de passe admin n'est pas défini, utiliser le mot de passe par défaut
+    if (!adminPassword) {
       const plainPassword = process.env.ADMIN_PASSWORD || 'Admin@12346'; // Mot de passe par défaut mis à jour
       const hashedPassword = await bcrypt.hash(plainPassword, 10);
-
-      const adminConfig = { password: hashedPassword };
-      fs.writeFileSync(ADMIN_FILE, JSON.stringify(adminConfig, null, 2));
-      logger.info('Mot de passe admin haché et sauvegardé');
+      adminPassword = hashedPassword;
+      logger.info('Mot de passe admin haché et sauvegardé en mémoire');
     } else {
-      // Si le fichier existe, on ne fait rien pour préserver le mot de passe existant
-      logger.info('Fichier admin-password.json existe déjà, mot de passe inchangé');
+      // Si le mot de passe existe déjà en mémoire, on ne fait rien
+      logger.info('Mot de passe admin existe déjà, inchangé');
     }
   } catch (error) {
     logger.error('Erreur initialisation password:', error.message);
@@ -434,10 +460,8 @@ app.post('/admin/login', loginLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Mot de passe requis' });
     }
 
-    const adminConfig = JSON.parse(fs.readFileSync(ADMIN_FILE, 'utf8'));
-
     // Comparer le mot de passe haché
-    const passwordMatch = await bcrypt.compare(password, adminConfig.password);
+    const passwordMatch = await bcrypt.compare(password, adminPassword);
 
     if (!passwordMatch) {
       logger.warn('Tentative de connexion échouée');
@@ -605,11 +629,6 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
     }
 
     // Sauvegarder l'inscription avec la preuve
-    let pendingPayments = [];
-    if (fs.existsSync(PENDING_PAYMENTS_FILE)) {
-      pendingPayments = JSON.parse(fs.readFileSync(PENDING_PAYMENTS_FILE, 'utf8'));
-    }
-
     const paymentId = Date.now().toString();
     const paymentData = {
       id: paymentId,
@@ -637,8 +656,7 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
       paymentData.transactionId = transactionId;
     }
 
-    pendingPayments.push(paymentData);
-    fs.writeFileSync(PENDING_PAYMENTS_FILE, JSON.stringify(pendingPayments, null, 2));
+    pendingPaymentsData.push(paymentData);
 
     // Notification via Telegram à l'administrateur (envoyée de manière asynchrone pour ne pas bloquer la réponse)
     const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN; // Token du bot Telegram
@@ -692,11 +710,7 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
 
 // Route pour admin - voir les paiements en attente
 app.get('/admin/pending-payments', requireAdminAuth, (req, res) => {
-  let pendingPayments = [];
-  if (fs.existsSync(PENDING_PAYMENTS_FILE)) {
-    pendingPayments = JSON.parse(fs.readFileSync(PENDING_PAYMENTS_FILE, 'utf8'));
-  }
-  res.json(pendingPayments);
+  res.json(pendingPaymentsData);
 });
 
 // Route pour admin - voir les inscriptions
@@ -716,21 +730,14 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { groupLink } = req.body;
-    const pendingFile = PENDING_PAYMENTS_FILE;
-    const groupLinksFile = GROUP_LINKS_FILE;
-
-    let pendingPayments = [];
-    if (fs.existsSync(pendingFile)) {
-      pendingPayments = JSON.parse(fs.readFileSync(pendingFile, 'utf8'));
-    }
 
     // Trouver le paiement
-    const paymentIndex = pendingPayments.findIndex(p => p.id === id);
+    const paymentIndex = pendingPaymentsData.findIndex(p => p.id === id);
     if (paymentIndex === -1) {
       return res.status(404).json({ error: 'Paiement non trouvé' });
     }
 
-    const payment = pendingPayments[paymentIndex];
+    const payment = pendingPaymentsData[paymentIndex];
 
     // Vérifier les places
     const inscriptions = getInscriptions();
@@ -748,27 +755,9 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
 
     // Mettre à jour le statut du paiement
     payment.status = 'approved';
-    pendingPayments[paymentIndex] = payment;
-    fs.writeFileSync(pendingFile, JSON.stringify(pendingPayments, null, 2));
+    pendingPaymentsData[paymentIndex] = payment;
 
     // Sauvegarder le lien du groupe si fourni
-    let groupLinksData = { groups: [] };
-    if (fs.existsSync(groupLinksFile)) {
-      const rawData = fs.readFileSync(groupLinksFile, 'utf8');
-      try {
-        const parsedData = JSON.parse(rawData);
-        // S'assurer que groupLinksData est un objet avec une propriété groups
-        groupLinksData = typeof parsedData === 'object' && parsedData !== null ? parsedData : { groups: [] };
-        if (!Array.isArray(groupLinksData.groups)) {
-          groupLinksData.groups = [];
-        }
-      } catch (parseError) {
-        console.error('Erreur parsing group-links.json:', parseError.message);
-        // Si le fichier est corrompu, initialiser avec un objet vide
-        groupLinksData = { groups: [] };
-      }
-    }
-
     if (groupLink) {
       groupLinksData.groups.push({
         id: payment.id,
@@ -777,7 +766,6 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
         link: groupLink,
         date: new Date().toLocaleString('fr-FR')
       });
-      fs.writeFileSync(groupLinksFile, JSON.stringify(groupLinksData, null, 2));
       console.log(`✅ Lien du groupe sauvegardé pour ${payment.nom}`);
     }
 
@@ -816,13 +804,13 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
       <body>
           <div class="container">
               <h1>🎉 Félicitations!</h1>
-              
+
               <p>Votre inscription au programme <strong>Boost & Success</strong> a été <span class="success">approuvée</span>!</p>
-              
+
               <p>Nous avons validé votre paiement et vous êtes maintenant officiellement membre de notre communauté exclusive d'entrepreneurs.</p>
-              
+
               ${groupLinkSection}
-              
+
               <p style="margin-top: 30px; padding: 20px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 5px;">
                   <strong>Document joint:</strong> Un PDF de vos conditions d'acceptation signées a été joint à cet email pour vos archives.
               </p>
