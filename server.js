@@ -1080,20 +1080,35 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const pendingPayments = pendingPaymentsData;
-
-    // Trouver le paiement
-    const paymentIndex = pendingPayments.findIndex(p => p.id === id);
+    // Trouver le paiement dans les données en mémoire
+    const paymentIndex = pendingPaymentsData.findIndex(p => p.id === id);
     if (paymentIndex === -1) {
       return res.status(404).json({ error: 'Paiement non trouvé' });
     }
 
-    const payment = pendingPayments[paymentIndex];
+    const payment = pendingPaymentsData[paymentIndex];
 
     // Mettre à jour le statut du paiement
     payment.status = 'rejected';
-    pendingPayments[paymentIndex] = payment;
-    fs.writeFileSync(pendingFile, JSON.stringify(pendingPayments, null, 2));
+    pendingPaymentsData[paymentIndex] = payment;
+
+    // Mettre à jour dans Supabase si disponible
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('pending_payments')
+          .update({ status: 'rejected' })
+          .eq('id', payment.id);
+
+        if (error) {
+          console.error('❌ Erreur mise à jour statut paiement dans Supabase:', error.message);
+          // Ne pas arrêter le processus en cas d'erreur Supabase
+        }
+      } catch (supabaseError) {
+        console.error('❌ Erreur mise à jour statut paiement dans Supabase:', supabaseError.message);
+        // Ne pas arrêter le processus en cas d'erreur Supabase
+      }
+    }
 
     // Envoyer email de rejet au client
     const rejectionEmailHtml = `
