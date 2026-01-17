@@ -1024,11 +1024,11 @@ app.get('/admin/export-csv', requireAdminAuth, (req, res) => {
 // Démarrer le serveur
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  logger.info(\`Serveur lancé sur le port \${port}\`);
+  logger.info(`Serveur lancé sur le port ${port}`);
 
   // Log l'état initial
   const inscriptions = getInscriptions();
   const config = getConfig();
-  logger.info(\`Inscriptions: \${inscriptions.length}/\${config.maxPlaces}\`);
-  logger.info(\`Session: \${config.sessionOpen ? 'OUVERTE' : 'FERMÉE'}\`);
+  logger.info(`Inscriptions: ${inscriptions.length}/${config.maxPlaces}`);
+  logger.info(`Session: ${config.sessionOpen ? 'OUVERTE' : 'FERMÉE'}`);
 });
