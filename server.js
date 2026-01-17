@@ -186,8 +186,11 @@ function initializeData() {
 
 initializeData();
 
-// Sessions admin (stocké en mémoire, réinitialisation au redémarrage du serveur)
-const adminSessions = new Map();
+// Importer JWT pour l'authentification stateless
+const jwt = require('jsonwebtoken');
+
+// Clé secrète pour signer les tokens (à définir dans les variables d'environnement)
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_for_dev';
 
 // Charger la configuration
 function getConfig() {
@@ -362,18 +365,18 @@ function generateSessionToken() {
 function requireAdminAuth(req, res, next) {
   const token = req.headers['x-admin-token'] || req.body.token;
 
-  if (!token || !adminSessions.has(token)) {
-    return res.status(401).json({ error: 'Non authentifié. Veuillez vous connecter.' });
+  if (!token) {
+    return res.status(401).json({ error: 'Token manquant. Veuillez vous connecter.' });
   }
 
-  // Vérifier l'expiration (24 heures)
-  const session = adminSessions.get(token);
-  if (Date.now() - session.createdAt > 24 * 60 * 60 * 1000) {
-    adminSessions.delete(token);
-    return res.status(401).json({ error: 'Session expirée. Veuillez vous reconnecter.' });
+  try {
+    // Vérifier le token JWT
+    const decoded = jwt.verify(token, JWT_SECRET);
+    // Le token est valide, continuer
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Token invalide ou expiré. Veuillez vous reconnecter.' });
   }
-
-  next();
 }
 
 // Fonctions d'envoi d'e-mails via Nodemailer
@@ -473,11 +476,14 @@ app.post('/admin/login', loginLimiter, async (req, res) => {
       return res.status(401).json({ error: 'Mot de passe incorrect' });
     }
 
-    // Créer une session
-    const token = generateSessionToken();
-    adminSessions.set(token, { createdAt: Date.now() });
+    // Générer un token JWT
+    const token = jwt.sign(
+      { userId: 'admin', timestamp: Date.now() },
+      JWT_SECRET,
+      { expiresIn: '24h' } // Le token expire après 24 heures
+    );
 
-    logger.info('Admin connecté avec token:', token.substring(0, 10) + '...');
+    logger.info('Admin connecté avec token JWT');
     res.json({
       success: true,
       token: token,
@@ -491,15 +497,9 @@ app.post('/admin/login', loginLimiter, async (req, res) => {
 
 // Route pour logout
 app.post('/admin/logout', (req, res) => {
-  try {
-    const token = req.headers['x-admin-token'] || req.body.token;
-    if (token) {
-      adminSessions.delete(token);
-    }
-    res.json({ success: true, message: 'Déconnecté' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
+  // Dans un système JWT, le logout consiste simplement à dire au client de supprimer le token
+  // Le token expirera automatiquement après 24h
+  res.json({ success: true, message: 'Déconnecté' });
 });
 
 // Route pour télécharger le PDF d'acceptation des conditions
