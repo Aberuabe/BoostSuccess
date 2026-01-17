@@ -144,6 +144,13 @@ if (EMAIL_USER && EMAIL_PASSWORD && SMTP_HOST && SMTP_PORT) {
   console.warn('⚠️ Configuration SMTP incomplète. Configurez EMAIL_USER, EMAIL_PASSWORD, SMTP_HOST et SMTP_PORT dans les variables d\'environnement.');
 }
 
+// Fichiers de données
+const INSCRIPTIONS_FILE = path.join(__dirname, 'inscriptions.json');
+const CONFIG_FILE = path.join(__dirname, 'config.json');
+const ADMIN_FILE = path.join(__dirname, 'admin-password.json');
+const PENDING_PAYMENTS_FILE = path.join(__dirname, 'pending-payments.json');
+const GROUP_LINKS_FILE = path.join(__dirname, 'group-links.json');
+
 // Stockage en mémoire (simule les fichiers JSON pour l'environnement serverless)
 let inscriptionsData = [];
 let configData = { maxPlaces: 5, sessionOpen: true };
@@ -154,7 +161,7 @@ let groupLinksData = { groups: [] };
 // Charger les données au démarrage
 function initializeData() {
   try {
-    // Charger les données depuis les fichiers s'ils existent (pour la compatibilité avec les anciens déploiements)
+    // Charger les données depuis les fichiers s'ils existent
     const inscriptionsPath = path.join(__dirname, 'inscriptions.json');
     if (fs.existsSync(inscriptionsPath)) {
       inscriptionsData = JSON.parse(fs.readFileSync(inscriptionsPath, 'utf8'));
@@ -163,6 +170,8 @@ function initializeData() {
     const configPath = path.join(__dirname, 'config.json');
     if (fs.existsSync(configPath)) {
       configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      // Mettre à jour MAX_INSCRIPTIONS avec la valeur du fichier
+      MAX_INSCRIPTIONS = configData.maxPlaces;
     }
 
     const adminPath = path.join(__dirname, 'admin-password.json');
@@ -195,13 +204,17 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_for_dev';
 
 // Charger la configuration
 function getConfig() {
-  return configData;
+  if (fs.existsSync(CONFIG_FILE)) {
+    return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+  }
+  // Si le fichier n'existe pas, retourner la configuration par défaut
+  return { maxPlaces: 5, sessionOpen: true };
 }
 
 function saveConfig(config) {
-  configData = { ...config }; // Sauvegarder en mémoire
-  // En environnement serverless, on ne sauvegarde pas sur le disque
-  // Les données sont perdues au redémarrage, mais c'est acceptable pour un test
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+  // Mettre à jour la variable en mémoire aussi
+  configData = { ...config };
 }
 
 let MAX_INSCRIPTIONS = getConfig().maxPlaces;
@@ -352,8 +365,7 @@ function saveInscription(userData) {
     ...userData,
     date: new Date().toLocaleString('fr-FR')
   });
-  // En environnement serverless, on ne sauvegarde pas sur le disque
-  // Les données sont perdues au redémarrage, mais c'est acceptable pour un test
+  fs.writeFileSync(INSCRIPTIONS_FILE, JSON.stringify(inscriptions, null, 2));
   return inscriptions.length;
 }
 
@@ -772,6 +784,9 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
     // Mettre à jour le statut du paiement
     payment.status = 'approved';
     pendingPaymentsData[paymentIndex] = payment;
+
+    // Sauvegarder les modifications dans le fichier
+    fs.writeFileSync(PENDING_PAYMENTS_FILE, JSON.stringify(pendingPaymentsData, null, 2));
 
     // Sauvegarder le lien du groupe si fourni
     if (groupLink) {
