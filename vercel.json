@@ -11,15 +11,5 @@
       "src": "/(.*)",
       "dest": "server.js"
     }
-  ],
-  "env": {
-    "TELEGRAM_BOT_TOKEN": "8331890833:AAFZGBgQiIXWVeaddu9y9HvhBlj_cFzaSLQ",
-    "TELEGRAM_CHAT_ID": "6573039473",
-    "EMAIL_USER": "adinaroles@gmail.com",
-    "EMAIL_PASSWORD": "mpcauratskzkiysj",
-    "SMTP_HOST": "smtp.gmail.com",
-    "SMTP_PORT": "587",
-    "EMAIL_FROM": "services@boostsuccess.com",
-    "PORT": "10000"
-  }
+  ]
 }
