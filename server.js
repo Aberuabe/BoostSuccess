@@ -1010,6 +1010,12 @@ app.get('/admin/export-csv', requireAdminAuth, (req, res) => {
   }
 });
 
+// Route pour la page d'accueil
+app.get('/', (req, res) => {
+  // Servir le fichier index.html
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // Démarrer le serveur
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
