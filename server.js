@@ -276,10 +276,10 @@ async function initializeData() {
         // Si la configuration n'existe pas, créer avec les valeurs par défaut
         const { error: insertError } = await supabase
           .from('config')
-          .insert([{ maxPlaces: 5, sessionOpen: true }]);
+          .insert([{ id: 1, maxPlaces: 5, sessionOpen: true }]);
 
         if (!insertError) {
-          configData = { maxPlaces: 5, sessionOpen: true };
+          configData = { id: 1, maxPlaces: 5, sessionOpen: true };
           MAX_INSCRIPTIONS = 5;
         } else {
           console.error('❌ Erreur création config:', insertError.message);
@@ -382,7 +382,7 @@ async function getConfig() {
         .select('*')
         .single();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') { // PGRST116 = Row not found
         console.error('❌ Erreur chargement config:', error.message);
         return configData; // Retourner les données en mémoire en cas d'erreur
       }
@@ -390,9 +390,21 @@ async function getConfig() {
       if (data) {
         configData = data;
         MAX_INSCRIPTIONS = data.maxPlaces;
+      } else {
+        // Si la configuration n'existe pas, créer avec les valeurs par défaut
+        const { error: insertError } = await supabase
+          .from('config')
+          .insert([{ id: 1, maxPlaces: 5, sessionOpen: true }]);
+
+        if (!insertError) {
+          configData = { id: 1, maxPlaces: 5, sessionOpen: true };
+          MAX_INSCRIPTIONS = 5;
+        } else {
+          console.error('❌ Erreur création config:', insertError.message);
+        }
       }
 
-      return data;
+      return configData;
     } catch (error) {
       console.error('❌ Erreur chargement config:', error.message);
       return configData; // Retourner les données en mémoire en cas d'erreur
@@ -409,9 +421,10 @@ async function saveConfig(config) {
   // Sauvegarder dans Supabase si disponible
   if (supabase) {
     try {
+      // Utiliser upsert pour créer ou mettre à jour la configuration
       const { error } = await supabase
         .from('config')
-        .upsert([config], { onConflict: 'id' }); // Utiliser upsert pour mettre à jour ou insérer
+        .upsert([config], { onConflict: 'id' }); // Mettre à jour ou insérer avec conflit sur la colonne id
 
       if (error) {
         console.error('❌ Erreur sauvegarde config:', error.message);
