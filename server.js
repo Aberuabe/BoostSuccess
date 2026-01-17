@@ -401,6 +401,8 @@ async function getConfig() {
           MAX_INSCRIPTIONS = 5;
         } else {
           console.error('❌ Erreur création config:', insertError.message);
+          // Retourner les valeurs par défaut en cas d'erreur
+          return { id: 1, maxPlaces: 5, sessionOpen: true };
         }
       }
 
