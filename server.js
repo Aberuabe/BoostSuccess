@@ -6,7 +6,7 @@ const multer = require('multer');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const PDFDocument = require('pdfkit');
-const emailjs = require('@emailjs/nodejs');
+const nodemailer = require('nodemailer'); // Bibliothèque pour l'envoi d'e-mails
 require('dotenv').config();
 
 const app = express();
@@ -104,6 +104,44 @@ const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
 });
+
+// Initialiser Nodemailer pour l'envoi d'e-mails
+let emailTransporter = null;
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
+const SMTP_PORT = process.env.SMTP_PORT || 587;
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
+
+if (EMAIL_USER && EMAIL_PASSWORD && SMTP_HOST && SMTP_PORT) {
+  try {
+    emailTransporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: parseInt(SMTP_PORT),
+      secure: SMTP_SECURE, // true for 465, false for other ports
+      auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASSWORD // Mot de passe d'application
+      },
+      tls: {
+        rejectUnauthorized: false // Permettre les connexions avec des certificats auto-signés
+      }
+    });
+
+    // Tester la connexion
+    emailTransporter.verify((error, success) => {
+      if (error) {
+        console.error('❌ Erreur de connexion SMTP:', error);
+      } else {
+        console.log('✅ Serveur SMTP prêt à envoyer des emails');
+      }
+    });
+  } catch (error) {
+    console.warn('⚠️ Email non disponible via SMTP:', error.message);
+  }
+} else {
+  console.warn('⚠️ Configuration SMTP incomplète. Configurez EMAIL_USER, EMAIL_PASSWORD, SMTP_HOST et SMTP_PORT dans les variables d\'environnement.');
+}
 
 // Fichiers de données
 const INSCRIPTIONS_FILE = path.join(__dirname, 'inscriptions.json');
@@ -305,94 +343,61 @@ function requireAdminAuth(req, res, next) {
   next();
 }
 
-// Fonctions d'envoi d'e-mails via EmailJS
-async function sendEmail(toEmail, subject, htmlContent, templateId = process.env.EMAILJS_TEMPLATE_APPROVAL_ID) {
-  const emailjsServiceId = process.env.EMAILJS_SERVICE_ID;
-  const emailjsUserId = process.env.EMAILJS_USER_ID;
-
-  if (!emailjsServiceId || !templateId || !emailjsUserId) {
-    console.warn('⚠️ Identifiants EmailJS non configurés. Vérifiez EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_APPROVAL_ID et EMAILJS_USER_ID dans les variables d\'environnement.');
+// Fonctions d'envoi d'e-mails via Nodemailer
+async function sendEmail(toEmail, subject, htmlContent) {
+  if (!emailTransporter) {
+    console.warn('⚠️ SMTP non configuré. Configurez EMAIL_USER et EMAIL_PASSWORD dans .env pour activer les emails SMTP');
     return false;
   }
 
   try {
-    console.log(`📧 Envoi email via EmailJS à ${toEmail}...`);
+    console.log(`📧 Envoi email SMTP à ${toEmail}...`);
 
-    // Configuration de EmailJS
-    emailjs.init(emailjsUserId);
-
-    // Paramètres de l'e-mail
-    const templateParams = {
-      to_email: toEmail,
+    await emailTransporter.sendMail({
+      from: EMAIL_USER,
+      to: toEmail,
       subject: subject,
-      html_content: htmlContent
-    };
+      html: htmlContent
+    });
 
-    // Envoi de l'e-mail
-    const response = await emailjs.send(
-      emailjsServiceId,
-      templateId,
-      templateParams
-    );
-
-    if (response.status === 200) {
-      console.log(`✅ Email envoyé via EmailJS à ${toEmail}`);
-      return true;
-    } else {
-      console.error(`❌ Erreur EmailJS: ${response.status} - ${response.text}`);
-      return false;
-    }
+    console.log(`✅ Email SMTP envoyé à ${toEmail}`);
+    return true;
   } catch (error) {
-    console.error('❌ Erreur envoi email via EmailJS:', error.message);
+    console.error('❌ Erreur Email SMTP:', error.message);
     return false;
   }
 }
 
 async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachmentName, attachmentPath) {
-  const emailjsServiceId = process.env.EMAILJS_SERVICE_ID;
-  const emailjsTemplateId = process.env.EMAILJS_TEMPLATE_APPROVAL_ID;
-  const emailjsUserId = process.env.EMAILJS_USER_ID;
-
-  if (!emailjsServiceId || !emailjsTemplateId || !emailjsUserId) {
-    console.warn('⚠️ Identifiants EmailJS non configurés. Vérifiez EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_APPROVAL_ID et EMAILJS_USER_ID dans les variables d\'environnement.');
+  if (!emailTransporter) {
+    console.warn('⚠️ SMTP non configuré. Configurez EMAIL_USER et EMAIL_PASSWORD dans .env pour activer les emails SMTP');
     return false;
   }
 
   try {
-    console.log(`📧 Envoi email avec pièce jointe via EmailJS à ${toEmail}...`);
+    console.log(`📧 Envoi email avec pièce jointe SMTP à ${toEmail}...`);
 
-    // Lire le fichier PDF
-    const pdfBuffer = fs.readFileSync(attachmentPath);
-    const pdfBase64 = pdfBuffer.toString('base64');
-
-    // Configuration de EmailJS
-    emailjs.init(emailjsUserId);
-
-    // Paramètres de l'e-mail avec pièce jointe
-    const templateParams = {
-      to_email: toEmail,
+    const mailOptions = {
+      from: EMAIL_USER,
+      to: toEmail,
       subject: subject,
-      html_content: htmlContent,
-      attachment_name: attachmentName,
-      attachment_content: pdfBase64
+      html: htmlContent
     };
 
-    // Envoi de l'e-mail
-    const response = await emailjs.send(
-      emailjsServiceId,
-      emailjsTemplateId,
-      templateParams
-    );
-
-    if (response.status === 200) {
-      console.log(`✅ Email avec pièce jointe envoyé via EmailJS à ${toEmail}`);
-      return true;
-    } else {
-      console.error(`❌ Erreur EmailJS avec pièce jointe: ${response.status} - ${response.text}`);
-      return false;
+    // Ajouter la pièce jointe si elle existe
+    if (attachmentPath && fs.existsSync(attachmentPath)) {
+      mailOptions.attachments = [{
+        filename: attachmentName,
+        path: attachmentPath
+      }];
     }
+
+    await emailTransporter.sendMail(mailOptions);
+
+    console.log(`✅ Email avec pièce jointe SMTP envoyé à ${toEmail}`);
+    return true;
   } catch (error) {
-    console.error('❌ Erreur envoi email avec pièce jointe via EmailJS:', error.message);
+    console.error('❌ Erreur Email avec pièce jointe SMTP:', error.message);
     return false;
   }
 }
@@ -919,8 +924,7 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
     const emailSent = await sendEmail(
       payment.email,
       '❌ Votre preuve de paiement a été rejetée',
-      rejectionEmailHtml,
-      process.env.EMAILJS_TEMPLATE_REJECTION_ID
+      rejectionEmailHtml
     );
 
     if (!emailSent) {
