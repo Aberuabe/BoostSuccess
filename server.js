@@ -204,17 +204,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_for_dev';
 
 // Charger la configuration
 function getConfig() {
-  if (fs.existsSync(CONFIG_FILE)) {
-    return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-  }
-  // Si le fichier n'existe pas, retourner la configuration par défaut
-  return { maxPlaces: 5, sessionOpen: true };
+  return configData;
 }
 
 function saveConfig(config) {
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
-  // Mettre à jour la variable en mémoire aussi
-  configData = { ...config };
+  configData = { ...config }; // Sauvegarder en mémoire seulement
+  // En environnement serverless, on ne peut pas écrire sur le disque
+  // Les données sont perdues au redémarrage, mais c'est inévitable dans ce contexte
 }
 
 let MAX_INSCRIPTIONS = getConfig().maxPlaces;
@@ -359,14 +355,14 @@ function getInscriptions() {
 
 // Fonction pour sauvegarder une inscription
 function saveInscription(userData) {
-  const inscriptions = getInscriptions();
-  inscriptions.push({
+  inscriptionsData.push({
     id: Date.now(),
     ...userData,
     date: new Date().toLocaleString('fr-FR')
   });
-  fs.writeFileSync(INSCRIPTIONS_FILE, JSON.stringify(inscriptions, null, 2));
-  return inscriptions.length;
+  // En environnement serverless, on ne sauvegarde pas sur le disque
+  // Les données sont perdues au redémarrage, mais c'est inévitable dans ce contexte
+  return inscriptionsData.length;
 }
 
 // Fonction pour générer un token de session
@@ -785,8 +781,8 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
     payment.status = 'approved';
     pendingPaymentsData[paymentIndex] = payment;
 
-    // Sauvegarder les modifications dans le fichier
-    fs.writeFileSync(PENDING_PAYMENTS_FILE, JSON.stringify(pendingPaymentsData, null, 2));
+    // En environnement serverless, on ne sauvegarde pas sur le disque
+    // Les modifications sont perdues au redémarrage, mais c'est inévitable dans ce contexte
 
     // Sauvegarder le lien du groupe si fourni
     if (groupLink) {
