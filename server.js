@@ -374,15 +374,54 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_for_dev';
 
 // Charger la configuration
-function getConfig() {
-  return configData;
+async function getConfig() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('config')
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('❌ Erreur chargement config:', error.message);
+        return configData; // Retourner les données en mémoire en cas d'erreur
+      }
+
+      if (data) {
+        configData = data;
+        MAX_INSCRIPTIONS = data.maxPlaces;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('❌ Erreur chargement config:', error.message);
+      return configData; // Retourner les données en mémoire en cas d'erreur
+    }
+  } else {
+    return configData;
+  }
 }
 
 // Sauvegarder la configuration
-function saveConfig(config) {
-  configData = { ...config }; // Sauvegarder en mémoire
-  // En environnement serverless, on ne sauvegarde pas sur le disque
-  // Les données sont perdues au redémarrage, mais c'est inévitable dans ce contexte
+async function saveConfig(config) {
+  configData = { ...config }; // Sauvegarder en mémoire aussi
+
+  // Sauvegarder dans Supabase si disponible
+  if (supabase) {
+    try {
+      const { error } = await supabase
+        .from('config')
+        .upsert([config], { onConflict: 'id' }); // Utiliser upsert pour mettre à jour ou insérer
+
+      if (error) {
+        console.error('❌ Erreur sauvegarde config:', error.message);
+        // Ne pas retourner d'erreur pour ne pas bloquer le processus
+      }
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde config:', error.message);
+      // Ne pas retourner d'erreur pour ne pas bloquer le processus
+    }
+  }
 }
 
 let MAX_INSCRIPTIONS = 5; // Valeur par défaut, sera mise à jour dans initializeData()
@@ -1165,11 +1204,11 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
 });
 
 // Route pour admin - ouvrir/fermer les inscriptions
-app.post('/admin/toggle-session', requireAdminAuth, (req, res) => {
+app.post('/admin/toggle-session', requireAdminAuth, async (req, res) => {
   try {
-    const config = getConfig();
+    const config = await getConfig();
     config.sessionOpen = !config.sessionOpen;
-    saveConfig(config);
+    await saveConfig(config);
 
     res.json({
       success: true,
