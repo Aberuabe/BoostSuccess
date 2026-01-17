@@ -602,12 +602,32 @@ Ce document serve de preuve d'acceptation des conditions par le client.
 }
 
 // Fonction pour lire les inscriptions
-function getInscriptions() {
-   return inscriptionsData;
+async function getInscriptions() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('inscriptions')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) {
+        console.error('❌ Erreur chargement inscriptions:', error.message);
+        return inscriptionsData; // Retourner les données en mémoire en cas d'erreur
+      }
+
+      inscriptionsData = data;
+      return data;
+    } catch (error) {
+      console.error('❌ Erreur chargement inscriptions:', error.message);
+      return inscriptionsData; // Retourner les données en mémoire en cas d'erreur
+    }
+  } else {
+    return inscriptionsData;
+  }
 }
 
 // Fonction pour sauvegarder une inscription
-function saveInscription(userData) {
+async function saveInscription(userData) {
   const newInscription = {
     id: Date.now(),
     ...userData,
@@ -616,8 +636,23 @@ function saveInscription(userData) {
 
   inscriptionsData.push(newInscription);
 
-  // En environnement serverless, on ne sauvegarde pas sur le disque
-  // Les données sont perdues au redémarrage, mais c'est inévitable dans ce contexte
+  // Sauvegarder dans Supabase si disponible
+  if (supabase) {
+    try {
+      const { error } = await supabase
+        .from('inscriptions')
+        .insert([newInscription]);
+
+      if (error) {
+        console.error('❌ Erreur sauvegarde inscription:', error.message);
+        // Ne pas retourner d'erreur pour ne pas bloquer le processus
+      }
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde inscription:', error.message);
+      // Ne pas retourner d'erreur pour ne pas bloquer le processus
+    }
+  }
+
   return inscriptionsData.length;
 }
 
@@ -796,9 +831,9 @@ app.post('/api/download-acceptance-pdf', async (req, res) => {
 });
 
 // Route pour obtenir le nombre d'inscriptions
-app.get('/api/inscriptions-count', (req, res) => {
-  const inscriptions = getInscriptions();
-  const config = getConfig();
+app.get('/api/inscriptions-count', async (req, res) => {
+  const inscriptions = await getInscriptions();
+  const config = await getConfig();
 
   logger.info(`Inscriptions: ${inscriptions.length}/${config.maxPlaces}, Session: ${config.sessionOpen}`);
 
