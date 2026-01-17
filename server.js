@@ -25,7 +25,7 @@ const corsOptions = {
       'http://localhost',
       'http://127.0.0.1:3000',
       'http://127.0.0.1',
-      'https://boostsuccess.vercel.app'  // URL de Vercel
+      'https://boostsuccess-bje9uthnc-aberuabes-projects.vercel.app'  // URL de votre projet Vercel
     ];
 
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
@@ -1022,9 +1022,10 @@ app.get('/admin/export-csv', requireAdminAuth, (req, res) => {
 });
 
 // Démarrer le serveur
-app.listen(PORT, () => {
-  logger.info(\`Serveur lancé sur http://localhost:\${PORT}\`);
-  
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  logger.info(\`Serveur lancé sur le port \${port}\`);
+
   // Log l'état initial
   const inscriptions = getInscriptions();
   const config = getConfig();
