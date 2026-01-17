@@ -263,19 +263,7 @@ async function initializeData() {
 
     // Charger les données depuis Supabase si disponible
     if (supabase) {
-      // Charger les inscriptions
-      const { data: inscriptions, error: inscriptionsError } = await supabase
-        .from('inscriptions')
-        .select('*')
-        .order('date', { ascending: false });
-
-      if (!inscriptionsError) {
-        inscriptionsData = inscriptions;
-      } else {
-        console.error('❌ Erreur chargement inscriptions:', inscriptionsError.message);
-      }
-
-      // Charger la configuration
+      // Charger la configuration en premier
       const { data: config, error: configError } = await supabase
         .from('config')
         .select('*')
@@ -292,9 +280,22 @@ async function initializeData() {
 
         if (!insertError) {
           configData = { maxPlaces: 5, sessionOpen: true };
+          MAX_INSCRIPTIONS = 5;
         } else {
           console.error('❌ Erreur création config:', insertError.message);
         }
+      }
+
+      // Charger les inscriptions
+      const { data: inscriptions, error: inscriptionsError } = await supabase
+        .from('inscriptions')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (!inscriptionsError) {
+        inscriptionsData = inscriptions;
+      } else {
+        console.error('❌ Erreur chargement inscriptions:', inscriptionsError.message);
       }
 
       // Charger les paiements en attente
@@ -384,7 +385,7 @@ function saveConfig(config) {
   // Les données sont perdues au redémarrage, mais c'est inévitable dans ce contexte
 }
 
-let MAX_INSCRIPTIONS = configData.maxPlaces;
+let MAX_INSCRIPTIONS = 5; // Valeur par défaut, sera mise à jour dans initializeData()
 
 // Initialiser les données en mémoire si elles sont vides
 if (inscriptionsData.length === 0) {
