@@ -389,20 +389,20 @@ async function getConfig() {
 
       if (data) {
         configData = data;
-        MAX_INSCRIPTIONS = data.maxPlaces;
+        MAX_INSCRIPTIONS = data.max_places || data.maxPlaces; // Gérer les deux cas possibles
       } else {
         // Si la configuration n'existe pas, créer avec les valeurs par défaut
         const { error: insertError } = await supabase
           .from('config')
-          .insert([{ id: 1, maxPlaces: 5, sessionOpen: true }]);
+          .insert([{ id: 1, max_places: 5, session_open: true }]);
 
         if (!insertError) {
-          configData = { id: 1, maxPlaces: 5, sessionOpen: true };
+          configData = { id: 1, max_places: 5, session_open: true };
           MAX_INSCRIPTIONS = 5;
         } else {
           console.error('❌ Erreur création config:', insertError.message);
           // Retourner les valeurs par défaut en cas d'erreur
-          return { id: 1, maxPlaces: 5, sessionOpen: true };
+          return { id: 1, max_places: 5, session_open: true };
         }
       }
 
@@ -423,10 +423,17 @@ async function saveConfig(config) {
   // Sauvegarder dans Supabase si disponible
   if (supabase) {
     try {
+      // Adapter le format des données pour correspondre à la structure de la base de données
+      const configToSave = {
+        id: config.id || 1,
+        max_places: config.maxPlaces || config.max_places || 5,
+        session_open: config.sessionOpen || config.sessionOpen || true
+      };
+
       // Utiliser upsert pour créer ou mettre à jour la configuration
       const { error } = await supabase
         .from('config')
-        .upsert([config], { onConflict: 'id' }); // Mettre à jour ou insérer avec conflit sur la colonne id
+        .upsert([configToSave], { onConflict: 'id' }); // Mettre à jour ou insérer avec conflit sur la colonne id
 
       if (error) {
         console.error('❌ Erreur sauvegarde config:', error.message);
