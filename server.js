@@ -25,7 +25,8 @@ const corsOptions = {
       'http://localhost',
       'http://127.0.0.1:3000',
       'http://127.0.0.1',
-      'https://boostsuccess.vercel.app'  // URL de votre projet Vercel
+      'https://boostsuccess.vercel.app',  // URL principale de votre projet Vercel
+      'https://boostsuccess-771lo97kq-aberuabes-projects.vercel.app'  // URL spécifique de votre instance Vercel
     ];
 
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
