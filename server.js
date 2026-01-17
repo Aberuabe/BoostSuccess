@@ -13,6 +13,19 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Initialiser le client Supabase
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log('✅ Client Supabase initialisé');
+} else {
+  console.warn('⚠️ Variables SUPABASE_URL ou SUPABASE_ANON_KEY non configurées');
+  console.warn('   Configurez SUPABASE_URL et SUPABASE_ANON_KEY dans .env pour activer la base de données Supabase');
+}
+
 // Configuration pour les déploiements derrière un proxy
 app.set('trust proxy', 1);
 
