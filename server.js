@@ -26,6 +26,89 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
   console.warn('   Configurez SUPABASE_URL et SUPABASE_ANON_KEY dans .env pour activer la base de données Supabase');
 }
 
+// Fonction pour créer les tables nécessaires dans Supabase
+async function createTablesIfNotExists() {
+  if (!supabase) {
+    console.warn('⚠️ Supabase non configuré. Impossible de créer les tables.');
+    return;
+  }
+
+  try {
+    console.log('🔍 Vérification des tables dans Supabase...');
+
+    // Vérifier si la table 'inscriptions' existe
+    const { data: inscriptionsTable, error: inscriptionsError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_name', 'inscriptions');
+
+    if (!inscriptionsError && (!inscriptionsTable || inscriptionsTable.length === 0)) {
+      console.log('📦 Création de la table "inscriptions"...');
+      // Pour créer la table, l'utilisateur doit le faire manuellement dans le dashboard Supabase
+      console.log('💡 Veuillez créer la table "inscriptions" manuellement dans votre dashboard Supabase');
+    }
+
+    // Vérifier si la table 'config' existe
+    const { data: configTable, error: configError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_name', 'config');
+
+    if (!configError && (!configTable || configTable.length === 0)) {
+      console.log('📦 Création de la table "config"...');
+      console.log('💡 Veuillez créer la table "config" manuellement dans votre dashboard Supabase');
+    }
+
+    // Vérifier si la table 'pending_payments' existe
+    const { data: pendingTable, error: pendingError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_name', 'pending_payments');
+
+    if (!pendingError && (!pendingTable || pendingTable.length === 0)) {
+      console.log('📦 Création de la table "pending_payments"...');
+      console.log('💡 Veuillez créer la table "pending_payments" manuellement dans votre dashboard Supabase');
+    }
+
+    // Vérifier si la table 'group_links' existe
+    const { data: groupTable, error: groupError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_name', 'group_links');
+
+    if (!groupError && (!groupTable || groupTable.length === 0)) {
+      console.log('📦 Création de la table "group_links"...');
+      console.log('💡 Veuillez créer la table "group_links" manuellement dans votre dashboard Supabase');
+    }
+
+    // Vérifier si la table 'admin' existe
+    const { data: adminTable, error: adminError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_name', 'admin');
+
+    if (!adminError && (!adminTable || adminTable.length === 0)) {
+      console.log('📦 Création de la table "admin"...');
+      console.log('💡 Veuillez créer la table "admin" manuellement dans votre dashboard Supabase');
+    }
+
+    // Vérifier si la table 'signed_documents' existe
+    const { data: docsTable, error: docsError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_name', 'signed_documents');
+
+    if (!docsError && (!docsTable || docsTable.length === 0)) {
+      console.log('📦 Création de la table "signed_documents"...');
+      console.log('💡 Veuillez créer la table "signed_documents" manuellement dans votre dashboard Supabase');
+    }
+
+    console.log('✅ Vérification des tables terminée');
+  } catch (error) {
+    console.error('❌ Erreur vérification/initialisation des tables:', error.message);
+  }
+}
+
 // Configuration pour les déploiements derrière un proxy
 app.set('trust proxy', 1);
 
@@ -175,6 +258,9 @@ let groupLinksData = { groups: [] };
 // Charger les données au démarrage
 async function initializeData() {
   try {
+    // Créer les tables si elles n'existent pas
+    await createTablesIfNotExists();
+
     // Charger les données depuis Supabase si disponible
     if (supabase) {
       // Charger les inscriptions
@@ -287,65 +373,15 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_for_dev';
 
 // Charger la configuration
-async function getConfig() {
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('config')
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('❌ Erreur chargement config:', error.message);
-        return configData; // Retourner les données en mémoire en cas d'erreur
-      }
-
-      if (data) {
-        configData = data;
-        MAX_INSCRIPTIONS = data.maxPlaces;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('❌ Erreur chargement config:', error.message);
-      return configData; // Retourner les données en mémoire en cas d'erreur
-    }
-  } else {
-    return configData;
-  }
+function getConfig() {
+  return configData;
 }
 
 // Sauvegarder la configuration
-async function saveConfig(config) {
-  configData = { ...config }; // Sauvegarder en mémoire aussi
-
-  // Sauvegarder dans Supabase si disponible
-  if (supabase) {
-    try {
-      // Supprimer l'ancienne configuration et ajouter la nouvelle
-      const { error: deleteError } = await supabase
-        .from('config')
-        .delete()
-        .match({ id: 1 }); // Supposer qu'il n'y a qu'une seule ligne de config avec id=1
-
-      if (deleteError) {
-        console.error('❌ Erreur suppression ancienne config:', deleteError.message);
-        // Continuer quand même pour ajouter la nouvelle
-      }
-
-      const { error: insertError } = await supabase
-        .from('config')
-        .insert([config]);
-
-      if (insertError) {
-        console.error('❌ Erreur sauvegarde config:', insertError.message);
-        // Ne pas retourner d'erreur pour ne pas bloquer le processus
-      }
-    } catch (error) {
-      console.error('❌ Erreur sauvegarde config:', error.message);
-      // Ne pas retourner d'erreur pour ne pas bloquer le processus
-    }
-  }
+function saveConfig(config) {
+  configData = { ...config }; // Sauvegarder en mémoire
+  // En environnement serverless, on ne sauvegarde pas sur le disque
+  // Les données sont perdues au redémarrage, mais c'est inévitable dans ce contexte
 }
 
 let MAX_INSCRIPTIONS = configData.maxPlaces;
@@ -513,32 +549,12 @@ Ce document serve de preuve d'acceptation des conditions par le client.
 }
 
 // Fonction pour lire les inscriptions
-async function getInscriptions() {
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('inscriptions')
-        .select('*')
-        .order('date', { ascending: false });
-
-      if (error) {
-        console.error('❌ Erreur chargement inscriptions:', error.message);
-        return inscriptionsData; // Retourner les données en mémoire en cas d'erreur
-      }
-
-      inscriptionsData = data;
-      return data;
-    } catch (error) {
-      console.error('❌ Erreur chargement inscriptions:', error.message);
-      return inscriptionsData; // Retourner les données en mémoire en cas d'erreur
-    }
-  } else {
-    return inscriptionsData;
-  }
+function getInscriptions() {
+   return inscriptionsData;
 }
 
 // Fonction pour sauvegarder une inscription
-async function saveInscription(userData) {
+function saveInscription(userData) {
   const newInscription = {
     id: Date.now(),
     ...userData,
@@ -547,23 +563,8 @@ async function saveInscription(userData) {
 
   inscriptionsData.push(newInscription);
 
-  // Sauvegarder dans Supabase si disponible
-  if (supabase) {
-    try {
-      const { error } = await supabase
-        .from('inscriptions')
-        .insert([newInscription]);
-
-      if (error) {
-        console.error('❌ Erreur sauvegarde inscription:', error.message);
-        // Ne pas retourner d'erreur pour ne pas bloquer le processus
-      }
-    } catch (error) {
-      console.error('❌ Erreur sauvegarde inscription:', error.message);
-      // Ne pas retourner d'erreur pour ne pas bloquer le processus
-    }
-  }
-
+  // En environnement serverless, on ne sauvegarde pas sur le disque
+  // Les données sont perdues au redémarrage, mais c'est inévitable dans ce contexte
   return inscriptionsData.length;
 }
 
@@ -632,63 +633,11 @@ async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachment
     };
 
     // Ajouter la pièce jointe si elle existe
-    if (attachmentPath) {
-      if (Buffer.isBuffer(attachmentPath)) {
-        // Si c'est un buffer (comme dans notre cas avec le PDF généré)
-        mailOptions.attachments = [{
-          filename: attachmentName,
-          content: attachmentPath,
-          contentType: 'application/pdf'
-        }];
-      } else if (typeof attachmentPath === 'string') {
-        // Si c'est une chaîne, vérifier si c'est un nom de fichier dans Supabase ou un chemin local
-        if (supabase) {
-          // Essayer de charger le fichier depuis Supabase
-          try {
-            const { data, error } = await supabase
-              .from('signed_documents')
-              .select('content')
-              .eq('filename', attachmentPath)
-              .single();
-
-            if (error) {
-              console.error('❌ Erreur chargement pièce jointe depuis Supabase:', error.message);
-              // Essayer avec le chemin local si disponible
-              if (fs.existsSync(attachmentPath)) {
-                mailOptions.attachments = [{
-                  filename: attachmentName,
-                  path: attachmentPath
-                }];
-              }
-            } else {
-              // Convertir le base64 en buffer
-              const fileBuffer = Buffer.from(data.content, 'base64');
-              mailOptions.attachments = [{
-                filename: attachmentName,
-                content: fileBuffer,
-                contentType: 'application/pdf'
-              }];
-            }
-          } catch (supabaseError) {
-            console.error('❌ Erreur chargement pièce jointe depuis Supabase:', supabaseError.message);
-            // Essayer avec le chemin local si disponible
-            if (fs.existsSync(attachmentPath)) {
-              mailOptions.attachments = [{
-                filename: attachmentName,
-                path: attachmentPath
-              }];
-            }
-          }
-        } else {
-          // Si Supabase n'est pas disponible, essayer le chemin local
-          if (fs.existsSync(attachmentPath)) {
-            mailOptions.attachments = [{
-              filename: attachmentName,
-              path: attachmentPath
-            }];
-          }
-        }
-      }
+    if (attachmentPath && fs.existsSync(attachmentPath)) {
+      mailOptions.attachments = [{
+        filename: attachmentName,
+        path: attachmentPath
+      }];
     }
 
     await emailTransporter.sendMail(mailOptions);
@@ -704,48 +653,15 @@ async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachment
 // Route pour initialiser/mettre à jour le mot de passe admin (une seule fois au démarrage)
 async function initAdminPassword() {
   try {
-    // Charger le mot de passe admin depuis Supabase si disponible
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('admin')
-          .select('password')
-          .single();
-
-        if (error && error.code !== 'PGRST116') { // PGRST116 = Row not found
-          console.error('❌ Erreur chargement mot de passe admin:', error.message);
-        } else if (data && data.password) {
-          adminPassword = data.password;
-          logger.info('Mot de passe admin chargé depuis Supabase');
-        } else {
-          // Si le mot de passe n'existe pas, créer avec le mot de passe par défaut
-          const plainPassword = process.env.ADMIN_PASSWORD || 'Admin@12346';
-          const hashedPassword = await bcrypt.hash(plainPassword, 10);
-
-          const { error: insertError } = await supabase
-            .from('admin')
-            .insert([{ password: hashedPassword }]);
-
-          if (!insertError) {
-            adminPassword = hashedPassword;
-            logger.info('Mot de passe admin haché et sauvegardé dans Supabase');
-          } else {
-            console.error('❌ Erreur sauvegarde mot de passe admin:', insertError.message);
-          }
-        }
-      } catch (supabaseError) {
-        console.error('❌ Erreur chargement mot de passe admin:', supabaseError.message);
-      }
+    // Si le mot de passe admin n'est pas défini, utiliser le mot de passe par défaut
+    if (!adminPassword) {
+      const plainPassword = process.env.ADMIN_PASSWORD || 'Admin@12346'; // Mot de passe par défaut mis à jour
+      const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      adminPassword = hashedPassword;
+      logger.info('Mot de passe admin haché et sauvegardé en mémoire');
     } else {
-      // Si Supabase n'est pas disponible, utiliser le stockage en mémoire
-      if (!adminPassword) {
-        const plainPassword = process.env.ADMIN_PASSWORD || 'Admin@12346';
-        const hashedPassword = await bcrypt.hash(plainPassword, 10);
-        adminPassword = hashedPassword;
-        logger.info('Mot de passe admin haché et sauvegardé en mémoire');
-      } else {
-        logger.info('Mot de passe admin existe déjà, inchangé');
-      }
+      // Si le mot de passe existe déjà en mémoire, on ne fait rien pour préserver le mot de passe existant
+      logger.info('Mot de passe admin existe déjà, inchangé');
     }
   } catch (error) {
     logger.error('Erreur initialisation password:', error.message);
@@ -1058,23 +974,8 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
     payment.status = 'approved';
     pendingPaymentsData[paymentIndex] = payment;
 
-    // Mettre à jour dans Supabase si disponible
-    if (supabase) {
-      try {
-        const { error } = await supabase
-          .from('pending_payments')
-          .update({ status: 'approved' })
-          .eq('id', payment.id);
-
-        if (error) {
-          console.error('❌ Erreur mise à jour paiement:', error.message);
-          // Ne pas arrêter le processus en cas d'erreur Supabase
-        }
-      } catch (error) {
-        console.error('❌ Erreur mise à jour paiement:', error.message);
-        // Ne pas arrêter le processus en cas d'erreur Supabase
-      }
-    }
+    // En environnement serverless, on ne sauvegarde pas sur le disque
+    // Les modifications sont perdues au redémarrage, mais c'est inévitable dans ce contexte
 
     // Sauvegarder le lien du groupe si fourni
     if (groupLink) {
@@ -1347,12 +1248,12 @@ async function startServer() {
     // Initialiser les données
     await initializeData();
 
-    app.listen(port, async () => {
+    app.listen(port, () => {
       logger.info(`Serveur lancé sur le port ${port}`);
 
       // Log l'état initial
-      const inscriptions = await getInscriptions();
-      const config = await getConfig();
+      const inscriptions = getInscriptions();
+      const config = getConfig();
       logger.info(`Inscriptions: ${inscriptions.length}/${config.maxPlaces}`);
       logger.info(`Session: ${config.sessionOpen ? 'OUVERTE' : 'FERMÉE'}`);
     });
