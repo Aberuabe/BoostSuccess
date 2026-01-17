@@ -6,7 +6,7 @@ const multer = require('multer');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const PDFDocument = require('pdfkit');
-const nodemailer = require('nodemailer'); // Bibliothèque pour l'envoi d'e-mails
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
@@ -25,7 +25,7 @@ const corsOptions = {
       'http://localhost',
       'http://127.0.0.1:3000',
       'http://127.0.0.1',
-      'https://boostsuccess.onrender.com'
+      'https://boostsuccess.vercel.app'  // URL de Vercel
     ];
 
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
@@ -654,7 +654,7 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
             `👉 <b>Connectez-vous à votre dashboard admin pour approuver ou rejeter ce paiement.</b>`;
 
           // Envoyer la notification via l'API Telegram
-          const response = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+          const response = await fetch(\`https://api.telegram.org/bot\${telegramBotToken}/sendMessage\`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -1013,7 +1013,7 @@ app.get('/admin/export-csv', requireAdminAuth, (req, res) => {
 
     // Envoyer le fichier CSV
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="inscriptions_${new Date().toISOString().slice(0,10)}.csv"`);
+    res.setHeader('Content-Disposition', \`attachment; filename="inscriptions_\${new Date().toISOString().slice(0,10)}.csv"\`);
     res.send(csvContent);
   } catch (error) {
     console.error('Erreur:', error);
@@ -1023,11 +1023,11 @@ app.get('/admin/export-csv', requireAdminAuth, (req, res) => {
 
 // Démarrer le serveur
 app.listen(PORT, () => {
-  logger.info(`Serveur lancé sur http://localhost:${PORT}`);
+  logger.info(\`Serveur lancé sur http://localhost:\${PORT}\`);
   
   // Log l'état initial
   const inscriptions = getInscriptions();
   const config = getConfig();
-  logger.info(`Inscriptions: ${inscriptions.length}/${config.maxPlaces}`);
-  logger.info(`Session: ${config.sessionOpen ? 'OUVERTE' : 'FERMÉE'}`);
+  logger.info(\`Inscriptions: \${inscriptions.length}/\${config.maxPlaces}\`);
+  logger.info(\`Session: \${config.sessionOpen ? 'OUVERTE' : 'FERMÉE'}\`);
 });
