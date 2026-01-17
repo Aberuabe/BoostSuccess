@@ -654,13 +654,13 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
             `👉 <b>Connectez-vous à votre dashboard admin pour approuver ou rejeter ce paiement.</b>`;
 
           // Envoyer la notification via l'API Telegram
-          const response = await fetch(\`https://api.telegram.org/bot\${telegramBotToken}/sendMessage\`, {
+          const response = await fetch(\`https://api.telegram.org/bot\${process.env.TELEGRAM_BOT_TOKEN}/sendMessage\`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              chat_id: adminChatId,
+              chat_id: process.env.TELEGRAM_CHAT_ID,
               text: telegramMessage,
               parse_mode: 'HTML'
             })
