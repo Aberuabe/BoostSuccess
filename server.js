@@ -25,7 +25,7 @@ const corsOptions = {
       'http://localhost',
       'http://127.0.0.1:3000',
       'http://127.0.0.1',
-      'https://boostsuccess-bje9uthnc-aberuabes-projects.vercel.app'  // URL de votre projet Vercel
+      'https://boostsuccess.vercel.app'  // URL de votre projet Vercel
     ];
 
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
@@ -1013,7 +1013,7 @@ app.get('/admin/export-csv', requireAdminAuth, (req, res) => {
 
     // Envoyer le fichier CSV
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', \`attachment; filename="inscriptions_\${new Date().toISOString().slice(0,10)}.csv"\`);
+    res.setHeader('Content-Disposition', `attachment; filename="inscriptions_${new Date().toISOString().slice(0,10)}.csv"`);
     res.send(csvContent);
   } catch (error) {
     console.error('Erreur:', error);
