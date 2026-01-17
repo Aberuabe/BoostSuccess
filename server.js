@@ -153,26 +153,31 @@ let groupLinksData = { groups: [] };
 // Charger les données au démarrage
 function initializeData() {
   try {
-    // Charger les données depuis les fichiers s'ils existent
-    if (fs.existsSync(path.join(__dirname, 'inscriptions.json'))) {
-      inscriptionsData = JSON.parse(fs.readFileSync(path.join(__dirname, 'inscriptions.json'), 'utf8'));
+    // Charger les données depuis les fichiers s'ils existent (pour la compatibilité avec les anciens déploiements)
+    const inscriptionsPath = path.join(__dirname, 'inscriptions.json');
+    if (fs.existsSync(inscriptionsPath)) {
+      inscriptionsData = JSON.parse(fs.readFileSync(inscriptionsPath, 'utf8'));
     }
 
-    if (fs.existsSync(path.join(__dirname, 'config.json'))) {
-      configData = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
+    const configPath = path.join(__dirname, 'config.json');
+    if (fs.existsSync(configPath)) {
+      configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     }
 
-    if (fs.existsSync(path.join(__dirname, 'admin-password.json'))) {
-      const adminFileData = JSON.parse(fs.readFileSync(path.join(__dirname, 'admin-password.json'), 'utf8'));
+    const adminPath = path.join(__dirname, 'admin-password.json');
+    if (fs.existsSync(adminPath)) {
+      const adminFileData = JSON.parse(fs.readFileSync(adminPath, 'utf8'));
       adminPassword = adminFileData.password;
     }
 
-    if (fs.existsSync(path.join(__dirname, 'pending-payments.json'))) {
-      pendingPaymentsData = JSON.parse(fs.readFileSync(path.join(__dirname, 'pending-payments.json'), 'utf8'));
+    const pendingPaymentsPath = path.join(__dirname, 'pending-payments.json');
+    if (fs.existsSync(pendingPaymentsPath)) {
+      pendingPaymentsData = JSON.parse(fs.readFileSync(pendingPaymentsPath, 'utf8'));
     }
 
-    if (fs.existsSync(path.join(__dirname, 'group-links.json'))) {
-      groupLinksData = JSON.parse(fs.readFileSync(path.join(__dirname, 'group-links.json'), 'utf8'));
+    const groupLinksPath = path.join(__dirname, 'group-links.json');
+    if (fs.existsSync(groupLinksPath)) {
+      groupLinksData = JSON.parse(fs.readFileSync(groupLinksPath, 'utf8'));
     }
   } catch (error) {
     console.error('Erreur chargement données:', error.message);
@@ -197,17 +202,17 @@ function saveConfig(config) {
 
 let MAX_INSCRIPTIONS = getConfig().maxPlaces;
 
-// Initialiser les fichiers s'ils n'existent pas
-if (!fs.existsSync(INSCRIPTIONS_FILE)) {
-  fs.writeFileSync(INSCRIPTIONS_FILE, JSON.stringify([], null, 2));
+// Initialiser les données en mémoire si elles sont vides
+if (inscriptionsData.length === 0) {
+  inscriptionsData = [];
 }
 
-if (!fs.existsSync(PENDING_PAYMENTS_FILE)) {
-  fs.writeFileSync(PENDING_PAYMENTS_FILE, JSON.stringify([], null, 2));
+if (pendingPaymentsData.length === 0) {
+  pendingPaymentsData = [];
 }
 
-if (!fs.existsSync(GROUP_LINKS_FILE)) {
-  fs.writeFileSync(GROUP_LINKS_FILE, JSON.stringify({ groups: [] }, null, 2));
+if (groupLinksData.groups.length === 0) {
+  groupLinksData = { groups: [] };
 }
 
 // Fonctions utilitaires
@@ -856,12 +861,8 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
 app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const pendingFile = PENDING_PAYMENTS_FILE;
 
-    let pendingPayments = [];
-    if (fs.existsSync(pendingFile)) {
-      pendingPayments = JSON.parse(fs.readFileSync(pendingFile, 'utf8'));
-    }
+    const pendingPayments = pendingPaymentsData;
 
     // Trouver le paiement
     const paymentIndex = pendingPayments.findIndex(p => p.id === id);
