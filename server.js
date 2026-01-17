@@ -1010,10 +1010,17 @@ app.get('/admin/export-csv', requireAdminAuth, (req, res) => {
   }
 });
 
-// Route pour la page d'accueil
+// Routes pour servir les pages HTML
 app.get('/', (req, res) => {
-  // Servir le fichier index.html
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/admin-login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin-login.html'));
+});
+
+app.get('/admin-dashboard.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin-dashboard.html'));
 });
 
 // Démarrer le serveur
