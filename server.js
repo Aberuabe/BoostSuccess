@@ -263,73 +263,106 @@ async function initializeData() {
 
     // Charger les données depuis Supabase si disponible
     if (supabase) {
-      // Charger la configuration en premier
-      const { data: config, error: configError } = await supabase
-        .from('config')
-        .select('*')
-        .single();
-
-      if (!configError && config) {
-        configData = config;
-        MAX_INSCRIPTIONS = config.maxPlaces;
-      } else {
-        // Si la configuration n'existe pas, créer avec les valeurs par défaut
-        const { error: insertError } = await supabase
+      try {
+        // Charger la configuration en premier
+        const { data: config, error: configError } = await supabase
           .from('config')
-          .insert([{ id: 1, maxPlaces: 5, sessionOpen: true }]);
+          .select('*')
+          .single();
 
-        if (!insertError) {
-          configData = { id: 1, maxPlaces: 5, sessionOpen: true };
-          MAX_INSCRIPTIONS = 5;
+        if (!configError && config) {
+          configData = config;
+          MAX_INSCRIPTIONS = config.max_places || config.maxPlaces;
         } else {
-          console.error('❌ Erreur création config:', insertError.message);
+          // Si la configuration n'existe pas, créer avec les valeurs par défaut
+          const { error: insertError } = await supabase
+            .from('config')
+            .insert([{ id: 1, max_places: 5, session_open: true }]);
+
+          if (!insertError) {
+            configData = { id: 1, max_places: 5, session_open: true };
+            MAX_INSCRIPTIONS = 5;
+          } else {
+            console.error('❌ Erreur création config:', insertError.message);
+          }
         }
-      }
 
-      // Charger les inscriptions
-      const { data: inscriptions, error: inscriptionsError } = await supabase
-        .from('inscriptions')
-        .select('*')
-        .order('date', { ascending: false });
+        // Charger les inscriptions
+        const { data: inscriptions, error: inscriptionsError } = await supabase
+          .from('inscriptions')
+          .select('*')
+          .order('date', { ascending: false });
 
-      if (!inscriptionsError) {
-        inscriptionsData = inscriptions;
-      } else {
-        console.error('❌ Erreur chargement inscriptions:', inscriptionsError.message);
-      }
+        if (!inscriptionsError) {
+          inscriptionsData = inscriptions;
+        } else {
+          console.error('❌ Erreur chargement inscriptions:', inscriptionsError.message);
+        }
 
-      // Charger les paiements en attente
-      const { data: pendingPayments, error: pendingError } = await supabase
-        .from('pending_payments')
-        .select('*');
+        // Charger les paiements en attente
+        const { data: pendingPayments, error: pendingError } = await supabase
+          .from('pending_payments')
+          .select('*');
 
-      if (!pendingError) {
-        pendingPaymentsData = pendingPayments;
-      } else {
-        console.error('❌ Erreur chargement paiements en attente:', pendingError.message);
-      }
+        if (!pendingError) {
+          pendingPaymentsData = pendingPayments;
+        } else {
+          console.error('❌ Erreur chargement paiements en attente:', pendingError.message);
+        }
 
-      // Charger les liens de groupe
-      const { data: groupLinks, error: groupLinksError } = await supabase
-        .from('group_links')
-        .select('*');
+        // Charger les liens de groupe
+        const { data: groupLinks, error: groupLinksError } = await supabase
+          .from('group_links')
+          .select('*');
 
-      if (!groupLinksError) {
-        groupLinksData = { groups: groupLinks };
-      } else {
-        console.error('❌ Erreur chargement liens de groupe:', groupLinksError.message);
-      }
+        if (!groupLinksError) {
+          groupLinksData = { groups: groupLinks };
+        } else {
+          console.error('❌ Erreur chargement liens de groupe:', groupLinksError.message);
+        }
 
-      // Charger le mot de passe admin
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin')
-        .select('password')
-        .single();
+        // Charger le mot de passe admin
+        const { data: adminData, error: adminError } = await supabase
+          .from('admin')
+          .select('password')
+          .single();
 
-      if (!adminError && adminData) {
-        adminPassword = adminData.password;
-      } else {
-        console.error('❌ Erreur chargement mot de passe admin:', adminError.message);
+        if (!adminError && adminData) {
+          adminPassword = adminData.password;
+        } else {
+          console.error('❌ Erreur chargement mot de passe admin:', adminError.message);
+        }
+      } catch (supabaseError) {
+        console.error('❌ Erreur critique avec Supabase lors de l\'initialisation:', supabaseError.message);
+        console.log('💡 Chargement des données depuis les fichiers locaux...');
+
+        // Charger les données depuis les fichiers s'ils existent (fallback)
+        const inscriptionsPath = path.join(__dirname, 'inscriptions.json');
+        if (fs.existsSync(inscriptionsPath)) {
+          inscriptionsData = JSON.parse(fs.readFileSync(inscriptionsPath, 'utf8'));
+        }
+
+        const configPath = path.join(__dirname, 'config.json');
+        if (fs.existsSync(configPath)) {
+          configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+          MAX_INSCRIPTIONS = configData.maxPlaces;
+        }
+
+        const adminPath = path.join(__dirname, 'admin-password.json');
+        if (fs.existsSync(adminPath)) {
+          const adminFileData = JSON.parse(fs.readFileSync(adminPath, 'utf8'));
+          adminPassword = adminFileData.password;
+        }
+
+        const pendingPaymentsPath = path.join(__dirname, 'pending-payments.json');
+        if (fs.existsSync(pendingPaymentsPath)) {
+          pendingPaymentsData = JSON.parse(fs.readFileSync(pendingPaymentsPath, 'utf8'));
+        }
+
+        const groupLinksPath = path.join(__dirname, 'group-links.json');
+        if (fs.existsSync(groupLinksPath)) {
+          groupLinksData = JSON.parse(fs.readFileSync(groupLinksPath, 'utf8'));
+        }
       }
     } else {
       // Charger les données depuis les fichiers s'ils existent (fallback)
@@ -373,7 +406,7 @@ const jwt = require('jsonwebtoken');
 // Clé secrète pour signer les tokens (à définir dans les variables d'environnement)
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_for_dev';
 
-// Charger la configuration
+// Charger la configuration avec meilleure gestion des erreurs
 async function getConfig() {
   if (supabase) {
     try {
@@ -382,36 +415,42 @@ async function getConfig() {
         .select('*')
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = Row not found
-        console.error('❌ Erreur chargement config:', error.message);
-        return configData; // Retourner les données en mémoire en cas d'erreur
+      if (error) {
+        if (error.code === 'PGRST116') { // Row not found
+          // Si la configuration n'existe pas, créer avec les valeurs par défaut
+          const { error: insertError } = await supabase
+            .from('config')
+            .insert([{ id: 1, max_places: 5, session_open: true }]);
+
+          if (!insertError) {
+            configData = { id: 1, max_places: 5, session_open: true };
+            MAX_INSCRIPTIONS = 5;
+            return configData;
+          } else {
+            console.error('❌ Erreur création config:', insertError.message);
+            // Retourner les valeurs par défaut en cas d'erreur
+            return { id: 1, max_places: 5, session_open: true };
+          }
+        } else {
+          console.error('❌ Erreur chargement config:', error.message);
+          // En cas d'erreur de connexion ou autre, utiliser les données en mémoire
+          return configData || { id: 1, max_places: 5, session_open: true };
+        }
       }
 
       if (data) {
         configData = data;
-        MAX_INSCRIPTIONS = data.max_places || data.maxPlaces; // Gérer les deux cas possibles
-      } else {
-        // Si la configuration n'existe pas, créer avec les valeurs par défaut
-        const { error: insertError } = await supabase
-          .from('config')
-          .insert([{ id: 1, max_places: 5, session_open: true }]);
-
-        if (!insertError) {
-          configData = { id: 1, max_places: 5, session_open: true };
-          MAX_INSCRIPTIONS = 5;
-        } else {
-          console.error('❌ Erreur création config:', insertError.message);
-          // Retourner les valeurs par défaut en cas d'erreur
-          return { id: 1, max_places: 5, session_open: true };
-        }
+        MAX_INSCRIPTIONS = data.max_places || data.maxPlaces || 5;
       }
 
       return configData;
     } catch (error) {
-      console.error('❌ Erreur chargement config:', error.message);
-      return configData; // Retourner les données en mémoire en cas d'erreur
+      console.error('❌ Erreur critique chargement config:', error.message);
+      // En cas d'erreur critique (comme fetch failed), retourner les données en mémoire
+      return configData || { id: 1, max_places: 5, session_open: true };
     }
   } else {
+    // Si Supabase n'est pas disponible, utiliser les données locales
     return configData;
   }
 }
@@ -440,7 +479,7 @@ async function saveConfig(config) {
         // Ne pas retourner d'erreur pour ne pas bloquer le processus
       }
     } catch (error) {
-      console.error('❌ Erreur sauvegarde config:', error.message);
+      console.error('❌ Erreur critique sauvegarde config:', error.message);
       // Ne pas retourner d'erreur pour ne pas bloquer le processus
     }
   }
@@ -627,7 +666,7 @@ async function getInscriptions() {
       inscriptionsData = data;
       return data;
     } catch (error) {
-      console.error('❌ Erreur chargement inscriptions:', error.message);
+      console.error('❌ Erreur critique chargement inscriptions:', error.message);
       return inscriptionsData; // Retourner les données en mémoire en cas d'erreur
     }
   } else {
@@ -657,7 +696,7 @@ async function saveInscription(userData) {
         // Ne pas retourner d'erreur pour ne pas bloquer le processus
       }
     } catch (error) {
-      console.error('❌ Erreur sauvegarde inscription:', error.message);
+      console.error('❌ Erreur critique sauvegarde inscription:', error.message);
       // Ne pas retourner d'erreur pour ne pas bloquer le processus
     }
   }
