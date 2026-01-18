@@ -471,9 +471,9 @@ async function saveConfig(config) {
         console.log('✅ Configuration mise à jour avec succès dans Supabase');
         console.log('✅ Données retournées:', data);
 
-        // Vérifier que la mise à jour a bien eu lieu en rechargeant la config
-        const updatedConfig = await getConfig();
-        console.log('🔄 Config après mise à jour:', updatedConfig);
+        // Mettre à jour la variable locale pour s'assurer que les changements sont immédiats
+        configData = { ...configData, ...configToUpdate };
+        console.log('🔄 Variable locale configData mise à jour:', configData);
       }
     } catch (error) {
       console.error('❌ Erreur critique sauvegarde config:', error.message);
