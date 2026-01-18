@@ -670,8 +670,12 @@ async function getInscriptions() {
 async function saveInscription(userData) {
   const newInscription = {
     id: Date.now(),
-    ...userData,
-    date: new Date().toLocaleString('fr-FR')
+    nom: userData.nom,
+    email: userData.email,
+    whatsapp: userData.whatsapp,
+    projet: userData.projet,
+    date: new Date().toISOString(),
+    owner_id: null  // Ajout de la colonne owner_id requise dans la table
   };
 
   console.log('💾 Tentative de sauvegarde d\'inscription:', newInscription.nom);
