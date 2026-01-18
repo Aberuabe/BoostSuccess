@@ -999,7 +999,7 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
       projet,
       method,
       status: 'pending',
-      date: new Date().toLocaleString('fr-FR')
+      date: new Date().toISOString()  // Format ISO compatible avec Supabase
     };
 
     // Ajouter la preuve selon la méthode
