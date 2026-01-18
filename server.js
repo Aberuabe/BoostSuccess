@@ -1031,10 +1031,10 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
           projet: paymentData.projet,
           method: paymentData.method,
           status: paymentData.status,
-          created_at: paymentData.date,
+          date: paymentData.date,
           proof: paymentData.proof || null,
-          proof_mime: paymentData.proofMime || null,
-          transaction_id: paymentData.transactionId || null
+          proofmime: paymentData.proofMime || null,
+          transactionid: paymentData.transactionId || null
         };
 
         const { error } = await supabase
