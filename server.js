@@ -1822,7 +1822,7 @@ app.post('/admin/update-places', requireAdminAuth, async (req, res) => {
 app.get('/admin/export-csv', requireAdminAuth, (req, res) => {
   try {
     const inscriptions = getInscriptions();
-    
+
     if (inscriptions.length === 0) {
       return res.status(404).json({ error: 'Aucune inscription à exporter' });
     }
@@ -1845,6 +1845,93 @@ app.get('/admin/export-csv', requireAdminAuth, (req, res) => {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="inscriptions_${new Date().toISOString().slice(0,10)}.csv"`);
     res.send(csvContent);
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Route pour admin - exporter les inscriptions en PDF
+app.get('/admin/export-pdf', requireAdminAuth, async (req, res) => {
+  try {
+    const inscriptions = await getInscriptions();
+
+    if (inscriptions.length === 0) {
+      return res.status(404).json({ error: 'Aucune inscription à exporter' });
+    }
+
+    const doc = new PDFDocument();
+    const buffers = [];
+
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => {
+      const pdfBuffer = Buffer.concat(buffers);
+
+      // Envoyer le PDF
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="inscriptions_${new Date().toISOString().slice(0,10)}.pdf"`);
+      res.send(pdfBuffer);
+    });
+    doc.on('error', (err) => {
+      console.error('Erreur génération PDF:', err);
+      res.status(500).json({ error: 'Erreur serveur' });
+    });
+
+    // En-tête du document
+    doc.fillColor('#00d4ff').fontSize(20).font('Helvetica-Bold');
+    doc.text('Boost & Success', { align: 'center' });
+    doc.fillColor('black'); // Réinitialiser la couleur
+    doc.moveDown(0.5);
+
+    // Titre principal
+    doc.fontSize(20).font('Helvetica-Bold');
+    doc.text('Export des Inscriptions', { align: 'center' });
+    doc.moveDown(0.5);
+
+    // Date de l'export
+    doc.fontSize(12).font('Helvetica');
+    doc.text(`Date d'export: ${new Date().toLocaleString('fr-FR')}`, { align: 'center' });
+    doc.moveDown(1);
+
+    // Ligne décorative
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke('#00d4ff');
+    doc.moveDown(1);
+
+    // Informations sur les inscriptions
+    doc.fontSize(14).font('Helvetica-Bold').text(`Total des inscriptions: ${inscriptions.length}`);
+    doc.moveDown(1);
+
+    // Liste des inscriptions
+    inscriptions.forEach((inscription, index) => {
+      // Saut de page si nécessaire
+      if (doc.y > 700) {
+        doc.addPage();
+      }
+
+      doc.fontSize(12).font('Helvetica-Bold').text(`Inscription #${index + 1}`, { underline: true });
+      doc.moveDown(0.2);
+
+      doc.fontSize(11).font('Helvetica');
+      doc.text(`ID: ${inscription.id}`, { indent: 20 });
+      doc.text(`Nom: ${inscription.nom}`, { indent: 20 });
+      doc.text(`Email: ${inscription.email}`, { indent: 20 });
+      doc.text(`WhatsApp: ${inscription.whatsapp}`, { indent: 20 });
+      doc.text(`Projet: ${inscription.projet}`, { indent: 20, lineBreak: true, width: 500 });
+      doc.text(`Date: ${inscription.date}`, { indent: 20 });
+      doc.moveDown(0.8);
+    });
+
+    // Pied de page
+    doc.moveDown(2);
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke('#d1d5db');
+    doc.moveDown(0.5);
+
+    doc.fontSize(8).font('Helvetica-Oblique');
+    doc.text('Document généré automatiquement par Boost & Success', { align: 'center' });
+    doc.text(`Exporté par un administrateur le ${new Date().toLocaleString('fr-FR')}`, { align: 'center' });
+    doc.text('© 2026 Boost & Success - Tous droits réservés', { align: 'center' });
+
+    doc.end();
   } catch (error) {
     console.error('Erreur:', error);
     res.status(500).json({ error: 'Erreur serveur' });
