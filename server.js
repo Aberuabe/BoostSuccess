@@ -1127,7 +1127,7 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
       return res.status(409).json({ error: 'Places épuisées' });
     }
 
-    // Sauvegarder l'inscription confirmée
+    // Sauvegarder l'inscription confirmée dans la table payments
     const totalCount = saveInscription({
       nom: payment.nom,
       email: payment.email,
@@ -1135,12 +1135,29 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
       projet: payment.projet
     });
 
-    // Mettre à jour le statut du paiement
+    // Mettre à jour le statut du paiement dans la table pending_payments
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('pending_payments')
+          .update({ status: 'approved' })
+          .eq('id', payment.id);
+
+        if (error) {
+          console.error('❌ Erreur mise à jour statut paiement dans Supabase:', error.message);
+          // Ne pas arrêter le processus en cas d'erreur
+        } else {
+          console.log('✅ Statut du paiement mis à jour dans Supabase:', payment.id);
+        }
+      } catch (supabaseError) {
+        console.error('❌ Erreur critique mise à jour statut paiement dans Supabase:', supabaseError.message);
+        // Ne pas arrêter le processus en cas d'erreur
+      }
+    }
+
+    // Mettre à jour le statut du paiement en mémoire
     payment.status = 'approved';
     pendingPaymentsData[paymentIndex] = payment;
-
-    // En environnement serverless, on ne sauvegarde pas sur le disque
-    // Les modifications sont perdues au redémarrage, mais c'est inévitable dans ce contexte
 
     // Sauvegarder le lien du groupe si fourni
     if (groupLink) {
