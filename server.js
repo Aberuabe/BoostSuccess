@@ -531,28 +531,20 @@ async function saveSignedPDF(nom, email, whatsapp, pdfBuffer) {
 
         if (error) {
           console.error('❌ Erreur sauvegarde PDF dans Supabase:', error.message);
-          // Continuer avec le stockage local en cas d'erreur
+          // Ne pas sauvegarder localement dans un environnement serverless
         } else {
           logger.info(`PDF signé sauvegardé dans Supabase pour ${nom}: ${fileName}`);
           return fileName; // Retourner le nom du fichier dans Supabase
         }
       } catch (supabaseError) {
         console.error('❌ Erreur sauvegarde PDF dans Supabase:', supabaseError.message);
-        // Continuer avec le stockage local en cas d'erreur
+        // Ne pas sauvegarder localement dans un environnement serverless
       }
     }
 
-    // Si Supabase n'est pas disponible ou en cas d'erreur, sauvegarder localement
-    const pdfDir = path.join(__dirname, 'signed-pdfs');
-    if (!fs.existsSync(pdfDir)) {
-      fs.mkdirSync(pdfDir, { recursive: true });
-    }
-
-    const filePath = path.join(pdfDir, fileName);
-    fs.writeFileSync(filePath, pdfBuffer);
-
-    logger.info(`PDF signé sauvegardé localement pour ${nom}: ${fileName}`);
-    return filePath;
+    // Dans un environnement serverless, ne pas sauvegarder localement
+    logger.info(`PDF signé généré pour ${nom} mais non sauvegardé localement (environnement serverless)`);
+    return fileName;
   } catch (error) {
     logger.error('Erreur sauvegarde PDF signé:', error.message);
     return null;
