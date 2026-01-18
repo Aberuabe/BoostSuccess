@@ -917,21 +917,16 @@ app.post('/api/download-acceptance-pdf', async (req, res) => {
 app.get('/api/inscriptions-count', async (req, res) => {
   const inscriptions = await getInscriptions();
 
-  // Charger la configuration générale depuis le fichier local
-  const generalConfigPath = path.join(__dirname, 'config.json');
-  let generalConfig = { maxPlaces: 5 }; // Valeur par défaut
+  // Charger la configuration depuis Supabase pour s'assurer d'avoir les dernières données
+  const config = await getConfig();
+  const maxPlaces = config.maxPlaces || config.max_places || 5;
 
-  if (fs.existsSync(generalConfigPath)) {
-    const generalConfigFile = fs.readFileSync(generalConfigPath, 'utf8');
-    generalConfig = JSON.parse(generalConfigFile);
-  }
-
-  logger.info(`Inscriptions: ${inscriptions.length}/${generalConfig.maxPlaces}, Session: ${sessionOpenStatus}`);
+  logger.info(`Inscriptions: ${inscriptions.length}/${maxPlaces}, Session: ${sessionOpenStatus}`);
 
   res.json({
     count: inscriptions.length,
-    max: generalConfig.maxPlaces,
-    available: inscriptions.length < generalConfig.maxPlaces,
+    max: maxPlaces,
+    available: inscriptions.length < maxPlaces,
     sessionOpen: sessionOpenStatus
   });
 });
