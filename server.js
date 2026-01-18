@@ -275,9 +275,10 @@ async function initializeData() {
           MAX_INSCRIPTIONS = config.max_places || config.maxPlaces;
         } else {
           // Si la configuration n'existe pas, créer avec les valeurs par défaut
+          // Utiliser upsert pour éviter les problèmes de RLS
           const { error: insertError } = await supabase
             .from('config')
-            .insert([{ id: 1, max_places: 5, session_open: true }]);
+            .upsert([{ id: 1, max_places: 5, session_open: true }], { onConflict: ['id'] });
 
           if (!insertError) {
             configData = { id: 1, max_places: 5, session_open: true };
@@ -420,7 +421,7 @@ async function getConfig() {
           // Si la configuration n'existe pas, créer avec les valeurs par défaut
           const { error: insertError } = await supabase
             .from('config')
-            .insert([{ id: 1, max_places: 5, session_open: true }]);
+            .upsert([{ id: 1, max_places: 5, session_open: true }], { onConflict: ['id'] });
 
           if (!insertError) {
             configData = { id: 1, max_places: 5, session_open: true };
@@ -883,13 +884,13 @@ app.get('/api/inscriptions-count', async (req, res) => {
   const inscriptions = await getInscriptions();
   const config = await getConfig();
 
-  logger.info(`Inscriptions: ${inscriptions.length}/${config.maxPlaces}, Session: ${config.sessionOpen}`);
+  logger.info(`Inscriptions: ${inscriptions.length}/${config.maxPlaces || config.max_places}, Session: ${config.sessionOpen || config.session_open}`);
 
   res.json({
     count: inscriptions.length,
-    max: config.maxPlaces,
-    available: inscriptions.length < config.maxPlaces,
-    sessionOpen: config.sessionOpen
+    max: config.maxPlaces || config.max_places,
+    available: inscriptions.length < (config.maxPlaces || config.max_places),
+    sessionOpen: config.sessionOpen || config.session_open
   });
 });
 
