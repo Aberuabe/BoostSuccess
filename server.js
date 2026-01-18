@@ -1514,8 +1514,6 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
                   <p>Programme d'Accélération Entrepreneuriale</p>
                   <div class="footer-links">
                       <a href="mailto:adinaroles@gmail.com">Contact</a>
-                      <a href="#">CGU</a>
-                      <a href="#">Politique de Confidentialité</a>
                   </div>
                   <p>&copy; 2026 Boost & Success. Tous droits réservés.</p>
               </div>
@@ -1591,27 +1589,149 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
       <html lang="fr">
       <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Votre paiement a été rejeté</title>
           <style>
-              body { font-family: Arial, sans-serif; background: #f3f4f6; }
-              .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-              h1 { color: #ef4444; }
-              .error { color: #ef4444; font-weight: bold; }
-              .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 0.9em; }
+              body {
+                  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                  background-color: #f9fafb;
+                  margin: 0;
+                  padding: 0;
+                  -webkit-font-smoothing: antialiased;
+              }
+              .container {
+                  max-width: 600px;
+                  margin: 0 auto;
+                  background-color: #ffffff;
+                  border-radius: 12px;
+                  overflow: hidden;
+                  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+              }
+              .header {
+                  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                  padding: 40px 30px;
+                  text-align: center;
+                  color: white;
+              }
+              .header h1 {
+                  margin: 0;
+                  font-size: 28px;
+                  font-weight: 700;
+              }
+              .header p {
+                  margin: 10px 0 0 0;
+                  font-size: 16px;
+                  opacity: 0.9;
+              }
+              .content {
+                  padding: 40px 30px;
+              }
+              .greeting {
+                  font-size: 20px;
+                  color: #1f2937;
+                  margin-bottom: 20px;
+              }
+              .message {
+                  background-color: #fef2f2;
+                  border-left: 4px solid #ef4444;
+                  padding: 20px;
+                  border-radius: 0 8px 8px 0;
+                  margin: 20px 0;
+                  font-size: 16px;
+                  line-height: 1.6;
+                  color: #374151;
+              }
+              .info-section {
+                  background: linear-gradient(120deg, #fffbeb 0%, #fef3c7 100%);
+                  border: 1px solid #fbbf24;
+                  border-radius: 8px;
+                  padding: 20px;
+                  margin: 25px 0;
+                  text-align: center;
+              }
+              .info-section h3 {
+                  margin: 0 0 10px 0;
+                  color: #92400e;
+                  font-size: 18px;
+              }
+              .info-section p {
+                  margin: 5px 0;
+                  color: #78350f;
+                  font-size: 15px;
+              }
+              .footer {
+                  background-color: #f3f4f6;
+                  padding: 30px;
+                  text-align: center;
+                  color: #6b7280;
+                  font-size: 14px;
+                  border-top: 1px solid #e5e7eb;
+              }
+              .footer-logo {
+                  font-size: 18px;
+                  font-weight: 700;
+                  color: #ef4444;
+                  margin-bottom: 15px;
+              }
+              .footer-links {
+                  margin: 15px 0;
+              }
+              .footer-links a {
+                  color: #ef4444;
+                  text-decoration: none;
+                  margin: 0 10px;
+                  font-size: 14px;
+              }
+              .footer-links a:hover {
+                  text-decoration: underline;
+              }
+              @media (max-width: 600px) {
+                  .container {
+                      margin: 10px;
+                  }
+                  .header, .content {
+                      padding: 25px 20px;
+                  }
+                  .header h1 {
+                      font-size: 24px;
+                  }
+              }
           </style>
       </head>
       <body>
           <div class="container">
-              <h1>❌ Paiement Rejeté</h1>
-              
-              <p>Votre paiement pour le programme <strong>Boost & Success</strong> a été <span class="error">rejeté</span>.</p>
-              
-              <p>Nous avons examiné votre preuve de paiement mais n'avons pas pu la valider. Veuillez nous contacter pour plus d'informations.</p>
-              
-              <p>Si vous pensez qu'il s'agit d'une erreur, n'hésitez pas à nous contacter pour clarifier la situation.</p>
+              <div class="header">
+                  <h1>❌ Paiement Rejeté</h1>
+                  <p>Votre inscription au programme Boost & Success n'a pas été approuvée</p>
+              </div>
+
+              <div class="content">
+                  <p class="greeting">Bonjour ${payment.nom},</p>
+
+                  <div class="message">
+                      <p>Nous regrettons de vous informer que votre paiement pour le programme <strong>Boost & Success</strong> a été <span style="color: #dc2626; font-weight: bold;">rejeté</span>.</p>
+                      <p>Nous avons examiné votre preuve de paiement mais n'avons pas pu la valider correctement.</p>
+                  </div>
+
+                  <div class="info-section">
+                      <h3>🔍 Prochaines Étapes</h3>
+                      <p>Veuillez nous contacter pour plus d'informations ou pour soumettre à nouveau votre preuve de paiement.</p>
+                      <p>Si vous pensez qu'il s'agit d'une erreur, n'hésitez pas à nous contacter pour clarifier la situation.</p>
+                  </div>
+
+                  <p style="text-align: center; margin: 30px 0; font-size: 16px; color: #374151;">
+                      Nous espérons pouvoir vous accompagner bientôt dans votre parcours entrepreneurial.<br>
+                      <strong>L'équipe Boost & Success</strong>
+                  </p>
+              </div>
 
               <div class="footer">
-                  <p>© 2026 Boost & Success - Tous droits réservés</p>
-                  <p>Questions? Contactez-nous à <a href="mailto:adinaroles@gmail.com">adinaroles@gmail.com</a></p>
+                  <div class="footer-logo">BOOST & SUCCESS</div>
+                  <p>Programme d'Accélération Entrepreneuriale</p>
+                  <div class="footer-links">
+                      <a href="mailto:adinaroles@gmail.com">Contact</a>
+                  </div>
+                  <p>&copy; 2026 Boost & Success. Tous droits réservés.</p>
               </div>
           </div>
       </body>
