@@ -274,18 +274,10 @@ async function initializeData() {
           configData = config;
           MAX_INSCRIPTIONS = config.max_places || config.maxPlaces;
         } else {
-          // Si la configuration n'existe pas, créer avec les valeurs par défaut
-          // Utiliser upsert pour éviter les problèmes de RLS
-          const { error: insertError } = await supabase
-            .from('config')
-            .upsert([{ id: 1, max_places: 5, session_open: true }], { onConflict: ['id'] });
-
-          if (!insertError) {
-            configData = { id: 1, max_places: 5, session_open: true };
-            MAX_INSCRIPTIONS = 5;
-          } else {
-            console.error('❌ Erreur création config:', insertError.message);
-          }
+          console.warn('⚠️ Configuration non trouvée dans Supabase, utilisation des valeurs par défaut');
+          // Utiliser les valeurs par défaut sans tenter de créer une nouvelle ligne
+          configData = { id: 1, max_places: 5, session_open: true };
+          MAX_INSCRIPTIONS = 5;
         }
 
         // Charger les inscriptions
@@ -418,20 +410,11 @@ async function getConfig() {
 
       if (error) {
         if (error.code === 'PGRST116') { // Row not found
-          // Si la configuration n'existe pas, créer avec les valeurs par défaut
-          const { error: insertError } = await supabase
-            .from('config')
-            .upsert([{ id: 1, max_places: 5, session_open: true }], { onConflict: ['id'] });
-
-          if (!insertError) {
-            configData = { id: 1, max_places: 5, session_open: true };
-            MAX_INSCRIPTIONS = 5;
-            return configData;
-          } else {
-            console.error('❌ Erreur création config:', insertError.message);
-            // Retourner les valeurs par défaut en cas d'erreur
-            return { id: 1, max_places: 5, session_open: true };
-          }
+          console.warn('⚠️ Configuration non trouvée dans Supabase, utilisation des valeurs par défaut');
+          // Utiliser les valeurs par défaut sans tenter de créer une nouvelle ligne
+          configData = { id: 1, max_places: 5, session_open: true };
+          MAX_INSCRIPTIONS = 5;
+          return configData;
         } else {
           console.error('❌ Erreur chargement config:', error.message);
           // En cas d'erreur de connexion ou autre, utiliser les données en mémoire
