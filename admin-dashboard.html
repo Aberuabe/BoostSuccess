@@ -465,7 +465,7 @@
                 const token = localStorage.getItem('adminToken');
                 const headers = { 'x-admin-token': token };
 
-                const response = await fetch(`${API_URL}/admin/inscriptions`, { headers });
+                const response = await fetch(`${API_URL}/admin/inscriptions?t=${new Date().getTime()}`, { headers });
                 const data = await response.json();
 
                 const statusElement = document.getElementById('session-status');
@@ -494,7 +494,7 @@
                 const token = localStorage.getItem('adminToken');
                 const headers = { 'x-admin-token': token };
                 
-                const response = await fetch(`${API_URL}/admin/toggle-session`, {
+                const response = await fetch(`${API_URL}/admin/toggle-session?t=${new Date().getTime()}`, {
                     method: 'POST',
                     headers: { 'x-admin-token': token, 'Content-Type': 'application/json' }
                 });
