@@ -878,15 +878,32 @@ app.post('/api/download-acceptance-pdf', async (req, res) => {
 // Route pour obtenir le nombre d'inscriptions
 app.get('/api/inscriptions-count', async (req, res) => {
   const inscriptions = await getInscriptions();
-  const config = await getConfig();
 
-  logger.info(`Inscriptions: ${inscriptions.length}/${config.maxPlaces || config.max_places}, Session: ${config.sessionOpen || config.session_open}`);
+  // Charger le statut des inscriptions depuis le fichier local
+  const configPath = path.join(__dirname, 'toggle-config.json');
+  let config = { sessionOpen: true }; // Valeur par défaut
+
+  if (fs.existsSync(configPath)) {
+    const configFile = fs.readFileSync(configPath, 'utf8');
+    config = JSON.parse(configFile);
+  }
+
+  // Charger la configuration générale depuis le fichier local
+  const generalConfigPath = path.join(__dirname, 'config.json');
+  let generalConfig = { maxPlaces: 5 }; // Valeur par défaut
+
+  if (fs.existsSync(generalConfigPath)) {
+    const generalConfigFile = fs.readFileSync(generalConfigPath, 'utf8');
+    generalConfig = JSON.parse(generalConfigFile);
+  }
+
+  logger.info(`Inscriptions: ${inscriptions.length}/${generalConfig.maxPlaces}, Session: ${config.sessionOpen}`);
 
   res.json({
     count: inscriptions.length,
-    max: config.maxPlaces || config.max_places,
-    available: inscriptions.length < (config.maxPlaces || config.max_places),
-    sessionOpen: config.sessionOpen || config.session_open
+    max: generalConfig.maxPlaces,
+    available: inscriptions.length < generalConfig.maxPlaces,
+    sessionOpen: config.sessionOpen
   });
 });
 
@@ -1065,46 +1082,32 @@ app.get('/admin/pending-payments', requireAdminAuth, (req, res) => {
 
 // Route pour admin - voir les inscriptions
 app.get('/admin/inscriptions', requireAdminAuth, async (req, res) => {
-  // Pour s'assurer d'avoir les données les plus récentes, on force le rechargement depuis Supabase
-  let inscriptions = [];
-  let config = {};
+  // Charger les inscriptions depuis la fonction existante
+  const inscriptions = await getInscriptions();
 
-  if (supabase) {
-    // Charger directement depuis Supabase pour avoir les données les plus récentes
-    const { data: dbInscriptions, error: inscriptionsError } = await supabase
-      .from('inscriptions')
-      .select('*')
-      .order('date', { ascending: false });
+  // Charger le statut des inscriptions depuis le fichier local
+  const configPath = path.join(__dirname, 'toggle-config.json');
+  let config = { sessionOpen: true }; // Valeur par défaut
 
-    if (!inscriptionsError && dbInscriptions) {
-      inscriptions = dbInscriptions;
-    } else {
-      // En cas d'erreur, utiliser les données en mémoire
-      inscriptions = await getInscriptions();
-    }
+  if (fs.existsSync(configPath)) {
+    const configFile = fs.readFileSync(configPath, 'utf8');
+    config = JSON.parse(configFile);
+  }
 
-    const { data: dbConfig, error: configError } = await supabase
-      .from('config')
-      .select('*')
-      .single();
+  // Charger la configuration générale depuis le fichier local
+  const generalConfigPath = path.join(__dirname, 'config.json');
+  let generalConfig = { maxPlaces: 5 }; // Valeur par défaut
 
-    if (!configError && dbConfig) {
-      config = dbConfig;
-    } else {
-      // En cas d'erreur, utiliser les données en mémoire
-      config = await getConfig();
-    }
-  } else {
-    // Si Supabase n'est pas disponible, utiliser les données locales
-    inscriptions = await getInscriptions();
-    config = await getConfig();
+  if (fs.existsSync(generalConfigPath)) {
+    const generalConfigFile = fs.readFileSync(generalConfigPath, 'utf8');
+    generalConfig = JSON.parse(generalConfigFile);
   }
 
   res.json({
     inscriptions,
     total: inscriptions.length,
-    max: config.maxPlaces || config.max_places,
-    sessionOpen: config.sessionOpen || config.session_open
+    max: generalConfig.maxPlaces,
+    sessionOpen: config.sessionOpen
   });
 });
 
@@ -1330,29 +1333,39 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
 });
 
 // Route pour admin - ouvrir/fermer les inscriptions
-app.post('/admin/toggle-session', requireAdminAuth, async (req, res) => {
+app.post('/admin/toggle-session', requireAdminAuth, (req, res) => {
   try {
-    const config = await getConfig();
+    // Lire la configuration depuis le fichier local
+    const configPath = path.join(__dirname, 'toggle-config.json');
+    let config = { sessionOpen: true }; // Valeur par défaut
+
+    if (fs.existsSync(configPath)) {
+      const configFile = fs.readFileSync(configPath, 'utf8');
+      config = JSON.parse(configFile);
+    }
+
     console.log('🔍 Avant basculement - Config actuelle:', config);
 
-    // Gérer les deux conventions de nommage
-    const currentStatus = config.session_open !== undefined ? config.session_open : config.sessionOpen;
+    // Basculer le statut
+    const currentStatus = config.sessionOpen;
     console.log('🔍 Statut actuel des inscriptions:', currentStatus);
 
-    // Créer un nouvel objet pour éviter les problèmes de référence
-    const updatedConfig = { ...config };
-    updatedConfig.sessionOpen = !currentStatus;
-    updatedConfig.session_open = !currentStatus;
+    config.sessionOpen = !currentStatus;
 
     console.log('🔍 Nouveau statut des inscriptions:', !currentStatus);
 
-    await saveConfig(updatedConfig);
-    console.log('🔍 Config sauvegardée avec succès');
+    // Sauvegarder dans le fichier local
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+    console.log('🔍 Config sauvegardée avec succès dans le fichier local');
+
+    // Mettre à jour la variable en mémoire
+    configData = { ...configData, sessionOpen: config.sessionOpen };
 
     res.json({
       success: true,
-      message: (updatedConfig.sessionOpen || updatedConfig.session_open) ? 'Inscriptions ouvertes' : 'Inscriptions fermées',
-      sessionOpen: updatedConfig.sessionOpen || updatedConfig.session_open
+      message: config.sessionOpen ? 'Inscriptions ouvertes' : 'Inscriptions fermées',
+      sessionOpen: config.sessionOpen
     });
   } catch (error) {
     console.error('Erreur:', error);
