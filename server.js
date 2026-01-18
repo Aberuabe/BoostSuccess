@@ -684,12 +684,14 @@ async function saveInscription(userData) {
     date: new Date().toLocaleString('fr-FR')
   };
 
+  console.log('💾 Tentative de sauvegarde d\'inscription:', newInscription.nom);
+
   inscriptionsData.push(newInscription);
 
   // Sauvegarder dans Supabase si disponible
   if (supabase) {
     try {
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('inscriptions')
         .insert([newInscription]);
 
@@ -698,6 +700,7 @@ async function saveInscription(userData) {
         // Ne pas retourner d'erreur pour ne pas bloquer le processus
       } else {
         console.log('✅ Inscription sauvegardée dans Supabase:', newInscription.nom);
+        console.log('✅ Données retournées:', data);
       }
     } catch (error) {
       console.error('❌ Erreur critique sauvegarde inscription dans Supabase:', error.message);
@@ -705,15 +708,10 @@ async function saveInscription(userData) {
     }
   }
 
-  // Sauvegarder immédiatement dans le fichier local pour les environnements serverless
-  try {
-    const inscriptionsPath = path.join(__dirname, 'inscriptions.json');
-    fs.writeFileSync(inscriptionsPath, JSON.stringify(inscriptionsData, null, 2));
-  } catch (error) {
-    console.error('❌ Erreur sauvegarde fichier inscriptions:', error.message);
-  }
-
-  return inscriptionsData.length;
+  // Retourner la longueur de la liste mise à jour
+  const updatedLength = inscriptionsData.length;
+  console.log('📊 Longueur mise à jour des inscriptions:', updatedLength);
+  return updatedLength;
 }
 
 // Fonction pour générer un token de session
@@ -1100,9 +1098,12 @@ app.get('/admin/inscriptions', requireAdminAuth, async (req, res) => {
     generalConfig = JSON.parse(generalConfigFile);
   }
 
+  // Calculer le total en incluant les inscriptions validées
+  const total = inscriptions.length;
+
   res.json({
     inscriptions,
-    total: inscriptions.length,
+    total: total,
     max: generalConfig.maxPlaces,
     sessionOpen: sessionOpenStatus
   });
