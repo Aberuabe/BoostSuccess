@@ -280,9 +280,9 @@ async function initializeData() {
           MAX_INSCRIPTIONS = 5;
         }
 
-        // Charger les inscriptions
+        // Charger les inscriptions (depuis la table payments)
         const { data: inscriptions, error: inscriptionsError } = await supabase
-          .from('inscriptions')
+          .from('payments')
           .select('*')
           .order('date', { ascending: false });
 
@@ -651,22 +651,22 @@ async function getInscriptions() {
   if (supabase) {
     try {
       const { data, error } = await supabase
-        .from('inscriptions')
+        .from('payments')
         .select('*')
         .order('date', { ascending: false });
 
       if (error) {
-        console.error('❌ Erreur chargement inscriptions depuis Supabase:', error.message);
+        console.error('❌ Erreur chargement inscriptions depuis Supabase (table payments):', error.message);
         // Si Supabase échoue, retourner les données en mémoire
         return inscriptionsData || [];
       }
 
       // Toujours retourner les données de Supabase sans les sauvegarder en mémoire
       // pour garantir la fraîcheur des données dans un environnement serverless
-      console.log('✅ Inscriptions chargées depuis Supabase:', data?.length || 0);
+      console.log('✅ Inscriptions chargées depuis Supabase (table payments):', data?.length || 0);
       return data || [];
     } catch (error) {
-      console.error('❌ Erreur critique chargement inscriptions depuis Supabase:', error.message);
+      console.error('❌ Erreur critique chargement inscriptions depuis Supabase (table payments):', error.message);
       // En cas d'erreur critique, retourner les données en mémoire
       return inscriptionsData || [];
     }
@@ -688,22 +688,22 @@ async function saveInscription(userData) {
 
   inscriptionsData.push(newInscription);
 
-  // Sauvegarder dans Supabase si disponible
+  // Sauvegarder dans Supabase si disponible - utiliser la table payments
   if (supabase) {
     try {
       const { error, data } = await supabase
-        .from('inscriptions')
+        .from('payments')
         .insert([newInscription]);
 
       if (error) {
-        console.error('❌ Erreur sauvegarde inscription dans Supabase:', error.message);
+        console.error('❌ Erreur sauvegarde inscription dans Supabase (table payments):', error.message);
         // Ne pas retourner d'erreur pour ne pas bloquer le processus
       } else {
-        console.log('✅ Inscription sauvegardée dans Supabase:', newInscription.nom);
+        console.log('✅ Inscription sauvegardée dans Supabase (table payments):', newInscription.nom);
         console.log('✅ Données retournées:', data);
       }
     } catch (error) {
-      console.error('❌ Erreur critique sauvegarde inscription dans Supabase:', error.message);
+      console.error('❌ Erreur critique sauvegarde inscription dans Supabase (table payments):', error.message);
       // Ne pas retourner d'erreur pour ne pas bloquer le processus
     }
   }
