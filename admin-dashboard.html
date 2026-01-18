@@ -464,13 +464,13 @@
             try {
                 const token = localStorage.getItem('adminToken');
                 const headers = { 'x-admin-token': token };
-                
+
                 const response = await fetch(`${API_URL}/admin/inscriptions`, { headers });
                 const data = await response.json();
-                
+
                 const statusElement = document.getElementById('session-status');
                 const toggleText = document.getElementById('toggle-text');
-                
+
                 if (data.sessionOpen) {
                     statusElement.textContent = 'OUVERTES';
                     statusElement.style.color = '#10b981';
@@ -480,6 +480,9 @@
                     statusElement.style.color = '#ef4444';
                     toggleText.textContent = 'Ouvrir les inscriptions';
                 }
+
+                // Mettre à jour également le total des inscriptions dans la section stats
+                document.getElementById('stat-total').textContent = `${data.total}/${data.max}`;
             } catch (error) {
                 console.error('Erreur chargement statut:', error);
             }

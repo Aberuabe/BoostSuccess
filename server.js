@@ -1067,14 +1067,14 @@ app.get('/admin/pending-payments', requireAdminAuth, (req, res) => {
 });
 
 // Route pour admin - voir les inscriptions
-app.get('/admin/inscriptions', requireAdminAuth, (req, res) => {
-  const inscriptions = getInscriptions();
-  const config = getConfig();
+app.get('/admin/inscriptions', requireAdminAuth, async (req, res) => {
+  const inscriptions = await getInscriptions();
+  const config = await getConfig();
   res.json({
     inscriptions,
     total: inscriptions.length,
-    max: config.maxPlaces,
-    sessionOpen: config.sessionOpen
+    max: config.maxPlaces || config.max_places,
+    sessionOpen: config.sessionOpen || config.session_open
   });
 });
 
