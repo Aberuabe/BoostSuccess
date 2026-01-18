@@ -698,6 +698,14 @@ async function saveInscription(userData) {
     }
   }
 
+  // Sauvegarder immédiatement dans le fichier local pour les environnements serverless
+  try {
+    const inscriptionsPath = path.join(__dirname, 'inscriptions.json');
+    fs.writeFileSync(inscriptionsPath, JSON.stringify(inscriptionsData, null, 2));
+  } catch (error) {
+    console.error('❌ Erreur sauvegarde fichier inscriptions:', error.message);
+  }
+
   return inscriptionsData.length;
 }
 
