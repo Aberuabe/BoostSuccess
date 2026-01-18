@@ -1137,9 +1137,12 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
 
     const payment = pendingPaymentsData[paymentIndex];
 
-    // Vérifier les places
-    const inscriptions = getInscriptions();
-    if (inscriptions.length >= MAX_INSCRIPTIONS) {
+    // Vérifier les places en chargeant la configuration à jour
+    const config = await getConfig();
+    const maxPlaces = config.maxPlaces || config.max_places || 5;
+
+    const inscriptions = await getInscriptions();
+    if (inscriptions.length >= maxPlaces) {
       return res.status(409).json({ error: 'Places épuisées' });
     }
 
