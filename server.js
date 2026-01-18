@@ -452,6 +452,8 @@ async function saveConfig(config) {
         session_open: config.sessionOpen || config.session_open || true
       };
 
+      console.log('💾 Tentative de mise à jour de la configuration dans Supabase:', configToUpdate);
+
       // Utiliser update pour ne modifier que la ligne existante (pas de création possible)
       const { error } = await supabase
         .from('config')
@@ -461,6 +463,8 @@ async function saveConfig(config) {
       if (error) {
         console.error('❌ Erreur sauvegarde config:', error.message);
         // Ne pas retourner d'erreur pour ne pas bloquer le processus
+      } else {
+        console.log('✅ Configuration mise à jour avec succès dans Supabase');
       }
     } catch (error) {
       console.error('❌ Erreur critique sauvegarde config:', error.message);
@@ -1287,12 +1291,19 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
 app.post('/admin/toggle-session', requireAdminAuth, async (req, res) => {
   try {
     const config = await getConfig();
+    console.log('🔍 Avant basculement - Config actuelle:', config);
+
     // Gérer les deux conventions de nommage
     const currentStatus = config.sessionOpen || config.session_open;
+    console.log('🔍 Statut actuel des inscriptions:', currentStatus);
+
     config.sessionOpen = !currentStatus;
     config.session_open = !currentStatus;
 
+    console.log('🔍 Nouveau statut des inscriptions:', !currentStatus);
+
     await saveConfig(config);
+    console.log('🔍 Config sauvegardée avec succès');
 
     res.json({
       success: true,
