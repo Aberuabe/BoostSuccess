@@ -656,14 +656,16 @@ async function getInscriptions() {
         .order('date', { ascending: false });
 
       if (error) {
-        console.error('❌ Erreur chargement inscriptions:', error.message);
+        console.error('❌ Erreur chargement inscriptions depuis Supabase:', error.message);
         return inscriptionsData; // Retourner les données en mémoire en cas d'erreur
       }
 
+      // Mettre à jour les données en mémoire avec celles de Supabase
       inscriptionsData = data;
+      console.log('✅ Inscriptions chargées depuis Supabase:', data.length);
       return data;
     } catch (error) {
-      console.error('❌ Erreur critique chargement inscriptions:', error.message);
+      console.error('❌ Erreur critique chargement inscriptions depuis Supabase:', error.message);
       return inscriptionsData; // Retourner les données en mémoire en cas d'erreur
     }
   } else {
@@ -689,11 +691,13 @@ async function saveInscription(userData) {
         .insert([newInscription]);
 
       if (error) {
-        console.error('❌ Erreur sauvegarde inscription:', error.message);
+        console.error('❌ Erreur sauvegarde inscription dans Supabase:', error.message);
         // Ne pas retourner d'erreur pour ne pas bloquer le processus
+      } else {
+        console.log('✅ Inscription sauvegardée dans Supabase:', newInscription.nom);
       }
     } catch (error) {
-      console.error('❌ Erreur critique sauvegarde inscription:', error.message);
+      console.error('❌ Erreur critique sauvegarde inscription dans Supabase:', error.message);
       // Ne pas retourner d'erreur pour ne pas bloquer le processus
     }
   }
