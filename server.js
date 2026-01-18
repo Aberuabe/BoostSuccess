@@ -1065,8 +1065,41 @@ app.get('/admin/pending-payments', requireAdminAuth, (req, res) => {
 
 // Route pour admin - voir les inscriptions
 app.get('/admin/inscriptions', requireAdminAuth, async (req, res) => {
-  const inscriptions = await getInscriptions();
-  const config = await getConfig();
+  // Pour s'assurer d'avoir les données les plus récentes, on force le rechargement depuis Supabase
+  let inscriptions = [];
+  let config = {};
+
+  if (supabase) {
+    // Charger directement depuis Supabase pour avoir les données les plus récentes
+    const { data: dbInscriptions, error: inscriptionsError } = await supabase
+      .from('inscriptions')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (!inscriptionsError && dbInscriptions) {
+      inscriptions = dbInscriptions;
+    } else {
+      // En cas d'erreur, utiliser les données en mémoire
+      inscriptions = await getInscriptions();
+    }
+
+    const { data: dbConfig, error: configError } = await supabase
+      .from('config')
+      .select('*')
+      .single();
+
+    if (!configError && dbConfig) {
+      config = dbConfig;
+    } else {
+      // En cas d'erreur, utiliser les données en mémoire
+      config = await getConfig();
+    }
+  } else {
+    // Si Supabase n'est pas disponible, utiliser les données locales
+    inscriptions = await getInscriptions();
+    config = await getConfig();
+  }
+
   res.json({
     inscriptions,
     total: inscriptions.length,
