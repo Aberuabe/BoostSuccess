@@ -1287,13 +1287,17 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
 app.post('/admin/toggle-session', requireAdminAuth, async (req, res) => {
   try {
     const config = await getConfig();
-    config.sessionOpen = !config.sessionOpen;
+    // Gérer les deux conventions de nommage
+    const currentStatus = config.sessionOpen || config.session_open;
+    config.sessionOpen = !currentStatus;
+    config.session_open = !currentStatus;
+
     await saveConfig(config);
 
     res.json({
       success: true,
-      message: config.sessionOpen ? 'Inscriptions ouvertes' : 'Inscriptions fermées',
-      sessionOpen: config.sessionOpen
+      message: (config.sessionOpen || config.session_open) ? 'Inscriptions ouvertes' : 'Inscriptions fermées',
+      sessionOpen: config.sessionOpen || config.session_open
     });
   } catch (error) {
     console.error('Erreur:', error);
