@@ -447,16 +447,16 @@ async function saveConfig(config) {
   if (supabase) {
     try {
       // Adapter le format des données pour correspondre à la structure de la base de données
-      const configToSave = {
-        id: config.id || 1,
+      const configToUpdate = {
         max_places: config.maxPlaces || config.max_places || 5,
         session_open: config.sessionOpen || config.session_open || true
       };
 
-      // Utiliser upsert pour créer ou mettre à jour la configuration
+      // Utiliser update pour ne modifier que la ligne existante (pas de création possible)
       const { error } = await supabase
         .from('config')
-        .upsert([configToSave], { onConflict: 'id' }); // Mettre à jour ou insérer avec conflit sur la colonne id
+        .update(configToUpdate)
+        .eq('id', config.id || 1);
 
       if (error) {
         console.error('❌ Erreur sauvegarde config:', error.message);
