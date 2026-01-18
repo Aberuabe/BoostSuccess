@@ -1065,7 +1065,7 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
       projet,
       method,
       status: 'pending',
-      date: new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString('fr-FR', { timeZone: 'UTC' })  // Ajouter 1 heure pour GMT+1 (Bénin)
+      date: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString()  // Format ISO compatible avec Supabase
     };
 
     // Ajouter la preuve selon la méthode
