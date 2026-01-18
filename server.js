@@ -526,7 +526,7 @@ async function saveSignedPDF(nom, email, whatsapp, pdfBuffer) {
             client_name: nom,
             client_email: email,
             client_whatsapp: whatsapp,
-            created_at: new Date().toISOString()
+            created_at: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString()  // Ajouter 1 heure pour GMT+1 (Bénin)
           }]);
 
         if (error) {
@@ -589,7 +589,7 @@ function generateAcceptancePDF(nom, email, whatsapp) {
       doc.moveDown(0.5);
 
       // Date et heure
-      doc.text(`Date et heure: ${new Date().toLocaleString('fr-FR')}`, { indent: 20 });
+      doc.text(`Date et heure: ${new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString('fr-FR')}`, { indent: 20 });
       doc.moveDown(1);
 
       // Conditions d'acceptation
@@ -653,7 +653,7 @@ function generateAcceptancePDF(nom, email, whatsapp) {
       doc.moveDown(1);
 
       doc.text(`Signature du client (digitale): ${nom}`, { align: 'center' });
-      doc.text(`Date et heure de signature: ${new Date().toLocaleString('fr-FR')}`, { align: 'center' });
+      doc.text(`Date et heure de signature: ${new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString('fr-FR')}`, { align: 'center' });
 
       doc.moveDown(2);
 
@@ -710,7 +710,7 @@ async function saveInscription(userData) {
     email: userData.email,
     whatsapp: userData.whatsapp,
     projet: userData.projet,
-    date: new Date().toISOString(),
+    date: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),  // Ajouter 1 heure pour GMT+1 (Bénin)
     owner_id: null  // Ajout de la colonne owner_id requise dans la table
   };
 
@@ -1065,7 +1065,7 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
       projet,
       method,
       status: 'pending',
-      date: new Date().toISOString()  // Format ISO compatible avec Supabase
+      date: new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString('fr-FR', { timeZone: 'UTC' })  // Ajouter 1 heure pour GMT+1 (Bénin)
     };
 
     // Ajouter la preuve selon la méthode
@@ -1289,7 +1289,7 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
               nom: payment.nom,
               email: payment.email,
               link: groupLink,
-              date: new Date().toLocaleString('fr-FR')
+              date: new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString('fr-FR')  // Ajouter 1 heure pour GMT+1 (Bénin)
             }]);
 
           if (error) {
@@ -1308,7 +1308,7 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
         nom: payment.nom,
         email: payment.email,
         link: groupLink,
-        date: new Date().toLocaleString('fr-FR')
+        date: new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString('fr-FR')  // Ajouter 1 heure pour GMT+1 (Bénin)
       });
     }
 
@@ -1843,7 +1843,7 @@ app.get('/admin/export-csv', requireAdminAuth, (req, res) => {
 
     // Envoyer le fichier CSV
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="inscriptions_${new Date().toISOString().slice(0,10)}.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="inscriptions_${new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString().slice(0,10)}.csv"`);  // Ajouter 1 heure pour GMT+1 (Bénin)
     res.send(csvContent);
   } catch (error) {
     console.error('Erreur:', error);
@@ -1869,7 +1869,7 @@ app.get('/admin/export-pdf', requireAdminAuth, async (req, res) => {
 
       // Envoyer le PDF
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="inscriptions_${new Date().toISOString().slice(0,10)}.pdf"`);
+      res.setHeader('Content-Disposition', `attachment; filename="inscriptions_${new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString().slice(0,10)}.pdf"`);  // Ajouter 1 heure pour GMT+1 (Bénin)
       res.send(pdfBuffer);
     });
     doc.on('error', (err) => {
@@ -1890,7 +1890,7 @@ app.get('/admin/export-pdf', requireAdminAuth, async (req, res) => {
 
     // Date de l'export
     doc.fontSize(12).font('Helvetica');
-    doc.text(`Date d'export: ${new Date().toLocaleString('fr-FR')}`, { align: 'center' });
+    doc.text(`Date d'export: ${new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString('fr-FR')}`, { align: 'center' });  // Ajouter 1 heure pour GMT+1 (Bénin)
     doc.moveDown(1);
 
     // Ligne décorative
@@ -1928,7 +1928,7 @@ app.get('/admin/export-pdf', requireAdminAuth, async (req, res) => {
 
     doc.fontSize(8).font('Helvetica-Oblique');
     doc.text('Document généré automatiquement par Boost & Success', { align: 'center' });
-    doc.text(`Exporté par un administrateur le ${new Date().toLocaleString('fr-FR')}`, { align: 'center' });
+    doc.text(`Exporté par un administrateur le ${new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString('fr-FR')}`, { align: 'center' });  // Ajouter 1 heure pour GMT+1 (Bénin)
     doc.text('© 2026 Boost & Success - Tous droits réservés', { align: 'center' });
 
     doc.end();
