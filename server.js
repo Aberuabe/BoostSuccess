@@ -283,8 +283,7 @@ async function initializeData() {
         // Charger les inscriptions (depuis la table payments)
         const { data: inscriptions, error: inscriptionsError } = await supabase
           .from('payments')
-          .select('*')
-          .order('date', { ascending: false });
+          .select('*');
 
         if (!inscriptionsError) {
           inscriptionsData = inscriptions;
@@ -652,8 +651,7 @@ async function getInscriptions() {
     try {
       const { data, error } = await supabase
         .from('payments')
-        .select('*')
-        .order('date', { ascending: false });
+        .select('*');
 
       if (error) {
         console.error('❌ Erreur chargement inscriptions depuis Supabase (table payments):', error.message);
