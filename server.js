@@ -1175,8 +1175,31 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
     payment.status = 'approved';
     pendingPaymentsData[paymentIndex] = payment;
 
-    // Sauvegarder le lien du groupe si fourni
+    // Sauvegarder le lien du groupe dans Supabase si fourni
     if (groupLink) {
+      if (supabase) {
+        try {
+          const { error } = await supabase
+            .from('group_links')
+            .insert([{
+              id: payment.id,
+              nom: payment.nom,
+              email: payment.email,
+              link: groupLink,
+              date: new Date().toLocaleString('fr-FR')
+            }]);
+
+          if (error) {
+            console.error('❌ Erreur sauvegarde lien du groupe dans Supabase:', error.message);
+          } else {
+            console.log(`✅ Lien du groupe sauvegardé dans Supabase pour ${payment.nom}`);
+          }
+        } catch (supabaseError) {
+          console.error('❌ Erreur critique sauvegarde lien du groupe dans Supabase:', supabaseError.message);
+        }
+      }
+
+      // Ajouter aussi en mémoire pour la cohérence
       groupLinksData.groups.push({
         id: payment.id,
         nom: payment.nom,
@@ -1184,7 +1207,6 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
         link: groupLink,
         date: new Date().toLocaleString('fr-FR')
       });
-      console.log(`✅ Lien du groupe sauvegardé pour ${payment.nom}`);
     }
 
     // Générer le PDF d'acceptation
