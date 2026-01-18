@@ -564,71 +564,107 @@ function generateAcceptancePDF(nom, email, whatsapp) {
       });
       doc.on('error', reject);
 
-      // En-tête
-      doc.fontSize(20).font('Helvetica-Bold').text('Boost & Success', { align: 'center' });
-      doc.fontSize(12).font('Helvetica').text('Formulaire d\'Acceptation des Conditions', { align: 'center' });
-      doc.moveDown();
+      // En-tête élégant
+      doc.fillColor('#00d4ff').fontSize(20).font('Helvetica-Bold');
+      doc.text('Boost & Success', { align: 'center' });
+      doc.fillColor('black'); // Réinitialiser la couleur
+      doc.moveDown(0.5);
 
-      // Informations
-      doc.fontSize(11).text('Date et heure:', { underline: true });
-      doc.text(new Date().toLocaleString('fr-FR'));
-      doc.moveDown();
+      // Titre principal
+      doc.fontSize(16).font('Helvetica-Bold').text('FORMULAIRE D\'ACCEPTATION DES CONDITIONS', { align: 'center' });
+      doc.moveDown(0.5);
 
-      doc.text('Informations du Client:', { underline: true });
-      doc.text(`Nom: ${nom}`);
-      doc.text(`Email: ${email}`);
-      doc.text(`WhatsApp: ${whatsapp}`);
-      doc.moveDown();
+      // Ligne décorative
+      doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke('#00d4ff');
+      doc.moveDown(1);
 
-      // Conditions
-      doc.fontSize(12).font('Helvetica-Bold').text('Conditions d\'Acceptation', { underline: true });
+      // Informations du client
+      doc.fontSize(12).font('Helvetica-Bold').text('Informations du Client', { underline: true });
+      doc.moveDown(0.3);
+
       doc.fontSize(11).font('Helvetica');
+      doc.text(`Nom: ${nom}`, { indent: 20 });
+      doc.text(`Email: ${email}`, { indent: 20 });
+      doc.text(`WhatsApp: ${whatsapp}`, { indent: 20 });
+      doc.moveDown(0.5);
 
-      const conditions = `
-1. INSCRIPTION
-Le client accepte de s'inscrire au programme Boost & Success en versant le montant requis.
+      // Date et heure
+      doc.text(`Date et heure: ${new Date().toLocaleString('fr-FR')}`, { indent: 20 });
+      doc.moveDown(1);
 
-2. VÉRIFICATION DU PAIEMENT
-Le client comprend que son paiement doit être vérifié avant son approbation. Ce processus peut prendre jusqu'à 24 heures.
+      // Conditions d'acceptation
+      doc.fontSize(14).font('Helvetica-Bold').text('CONDITIONS D\'ACCEPTATION', { underline: true });
+      doc.moveDown(0.5);
 
-3. ACCÈS AU GROUPE PRIVÉ
-Une fois approuvé, le client aura accès au groupe privé Boost & Success avec tous les bénéfices associés.
+      // Numérotation des sections
+      const conditions = [
+        {
+          title: "INSCRIPTION",
+          content: "Le client accepte de s'inscrire au programme Boost & Success en versant le montant requis."
+        },
+        {
+          title: "VÉRIFICATION DU PAIEMENT",
+          content: "Le client comprend que son paiement doit être vérifié avant son approbation. Ce processus peut prendre jusqu'à 24 heures."
+        },
+        {
+          title: "ACCÈS AU GROUPE PRIVÉ",
+          content: "Une fois approuvé, le client aura accès au groupe privé Boost & Success avec tous les bénéfices associés."
+        },
+        {
+          title: "CONDITIONS DE SERVICE",
+          content: [
+            "• Le client s'engage à respecter les règles du groupe",
+            "• Le client ne doit pas partager les contenus privés en dehors du groupe",
+            "• Le client accepte les conditions de la plateforme"
+          ].join("\n")
+        },
+        {
+          title: "CONFIRMATION",
+          content: "Le client confirme qu'il accepte volontairement ces conditions SANS CONTRAINTE et qu'aucune pression n'a été exercée."
+        },
+        {
+          title: "RESPONSABILITÉ",
+          content: "Boost & Success décline toute responsabilité en cas de dispute ou désaccord ultérieur concernant les conditions."
+        },
+        {
+          title: "ARCHIVAGE",
+          content: "Ce document sert de preuve d'acceptation des conditions par le client."
+        }
+      ];
 
-4. CONDITIONS DE SERVICE
-- Le client s'engage à respecter les règles du groupe
-- Le client ne doit pas partager les contenus privés en dehors du groupe
-- Le client accepte les conditions de la plateforme
-
-5. CONFIRMATION
-Le client confirme qu'il accepte volontairement ces conditions SANS CONTRAINTE et qu'aucune pression n'a été exercée.
-
-6. RESPONSABILITÉ
-Boost & Success décline toute responsabilité en cas de dispute ou désaccord ultérieur concernant les conditions.
-
-7. ARCHIVAGE
-Ce document serve de preuve d'acceptation des conditions par le client.
-      `.trim();
-
-      doc.text(conditions, {
-        align: 'left',
-        lineGap: 5
+      doc.fontSize(11).font('Helvetica');
+      conditions.forEach((condition, index) => {
+        doc.fillColor('#00d4ff').text(`${index + 1}. ${condition.title}`, { continued: true });
+        doc.fillColor('black').text(`\n${condition.content}\n`, { indent: 10, lineGap: 3 });
+        doc.moveDown(0.5);
       });
 
-      doc.moveDown();
+      doc.moveDown(1);
 
-      // Signatures
-      doc.fontSize(11).font('Helvetica-Bold').text('Acceptation Volontaire', { underline: true });
-      doc.fontSize(10).font('Helvetica');
-      doc.text('Je déclare avoir lu, compris et accepté les conditions ci-dessus de manière volontaire et sans contrainte.');
+      // Section d'acceptation
+      doc.rect(50, doc.y, 500, 80).stroke('#00d4ff');
+      doc.y += 10;
+
+      doc.fillColor('#00d4ff').fontSize(12).font('Helvetica-Bold').text('ACCEPTATION VOLONTAIRE', { align: 'center' });
+      doc.y += 10;
+
+      doc.fillColor('black').fontSize(10).font('Helvetica');
+      doc.text("Je déclare avoir lu, compris et accepté les conditions ci-dessus de manière volontaire et sans contrainte.", { align: 'center' });
+      doc.moveDown(1);
+
+      doc.text(`Signature du client (digitale): ${nom}`, { align: 'center' });
+      doc.text(`Date et heure de signature: ${new Date().toLocaleString('fr-FR')}`, { align: 'center' });
+
       doc.moveDown(2);
 
-      doc.text(`Signature du client (digitale): ${nom}`);
-      doc.text(`Date et heure de signature: ${new Date().toLocaleString('fr-FR')}`);
-      doc.moveDown();
+      // Pied de page élégant
+      doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke('#d1d5db');
+      doc.moveDown(0.5);
 
-      doc.fontSize(9).text('---', { align: 'center' });
-      doc.fontSize(8).text('Document généré automatiquement par Boost & Success', { align: 'center' });
+      doc.fontSize(8).font('Helvetica-Oblique');
+      doc.text('Document généré automatiquement par Boost & Success', { align: 'center' });
       doc.text(`ID de transaction: ${Date.now()}`, { align: 'center' });
+      doc.text('© 2026 Boost & Success - Tous droits réservés', { align: 'center' });
 
       doc.end();
     } catch (error) {
@@ -1301,34 +1337,187 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
       <html lang="fr">
       <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Votre inscription Boost & Success est approuvée</title>
           <style>
-              body { font-family: Arial, sans-serif; background: #f3f4f6; }
-              .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-              h1 { color: #00d4ff; }
-              .success { color: #10b981; font-weight: bold; }
-              a { color: #00d4ff; text-decoration: none; }
-              .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 0.9em; }
+              body {
+                  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                  background-color: #f9fafb;
+                  margin: 0;
+                  padding: 0;
+                  -webkit-font-smoothing: antialiased;
+              }
+              .container {
+                  max-width: 600px;
+                  margin: 0 auto;
+                  background-color: #ffffff;
+                  border-radius: 12px;
+                  overflow: hidden;
+                  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+              }
+              .header {
+                  background: linear-gradient(135deg, #00d4ff 0%, #7000ff 100%);
+                  padding: 40px 30px;
+                  text-align: center;
+                  color: white;
+              }
+              .header h1 {
+                  margin: 0;
+                  font-size: 28px;
+                  font-weight: 700;
+              }
+              .header p {
+                  margin: 10px 0 0 0;
+                  font-size: 16px;
+                  opacity: 0.9;
+              }
+              .content {
+                  padding: 40px 30px;
+              }
+              .greeting {
+                  font-size: 20px;
+                  color: #1f2937;
+                  margin-bottom: 20px;
+              }
+              .message {
+                  background-color: #f8fafc;
+                  border-left: 4px solid #00d4ff;
+                  padding: 20px;
+                  border-radius: 0 8px 8px 0;
+                  margin: 20px 0;
+                  font-size: 16px;
+                  line-height: 1.6;
+                  color: #374151;
+              }
+              .highlight {
+                  background: linear-gradient(120deg, #e0f2fe 0%, #f0f9ff 100%);
+                  border: 1px solid #bae6fd;
+                  border-radius: 8px;
+                  padding: 25px;
+                  margin: 25px 0;
+                  text-align: center;
+              }
+              .highlight h3 {
+                  margin: 0 0 10px 0;
+                  color: #0369a1;
+                  font-size: 18px;
+              }
+              .highlight p {
+                  margin: 5px 0;
+                  color: #0c4a6e;
+                  font-size: 15px;
+              }
+              .cta-button {
+                  display: inline-block;
+                  background: linear-gradient(135deg, #00d4ff 0%, #7000ff 100%);
+                  color: white !important;
+                  text-decoration: none;
+                  padding: 14px 28px;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  font-size: 16px;
+                  margin: 20px 0;
+                  transition: transform 0.2s, box-shadow 0.2s;
+              }
+              .cta-button:hover {
+                  transform: translateY(-2px);
+                  box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+              }
+              .document-section {
+                  background: linear-gradient(120deg, #fefce8 0%, #fef9c3 100%);
+                  border: 1px solid #fbbf24;
+                  border-radius: 8px;
+                  padding: 20px;
+                  margin: 25px 0;
+                  text-align: center;
+              }
+              .document-section h3 {
+                  margin: 0 0 10px 0;
+                  color: #92400e;
+                  font-size: 18px;
+              }
+              .document-section p {
+                  margin: 5px 0;
+                  color: #78350f;
+                  font-size: 15px;
+              }
+              .footer {
+                  background-color: #f3f4f6;
+                  padding: 30px;
+                  text-align: center;
+                  color: #6b7280;
+                  font-size: 14px;
+                  border-top: 1px solid #e5e7eb;
+              }
+              .footer-logo {
+                  font-size: 18px;
+                  font-weight: 700;
+                  color: #00d4ff;
+                  margin-bottom: 15px;
+              }
+              .footer-links {
+                  margin: 15px 0;
+              }
+              .footer-links a {
+                  color: #00d4ff;
+                  text-decoration: none;
+                  margin: 0 10px;
+                  font-size: 14px;
+              }
+              .footer-links a:hover {
+                  text-decoration: underline;
+              }
+              @media (max-width: 600px) {
+                  .container {
+                      margin: 10px;
+                  }
+                  .header, .content {
+                      padding: 25px 20px;
+                  }
+                  .header h1 {
+                      font-size: 24px;
+                  }
+              }
           </style>
       </head>
       <body>
           <div class="container">
-              <h1>🎉 Félicitations!</h1>
+              <div class="header">
+                  <h1>🎉 Félicitations!</h1>
+                  <p>Votre inscription au programme Boost & Success a été approuvée</p>
+              </div>
 
-              <p>Votre inscription au programme <strong>Boost & Success</strong> a été <span class="success">approuvée</span>!</p>
+              <div class="content">
+                  <p class="greeting">Bonjour ${payment.nom},</p>
 
-              <p>Nous avons validé votre paiement et vous êtes maintenant officiellement membre de notre communauté exclusive d'entrepreneurs.</p>
+                  <div class="message">
+                      <p>Nous avons le plaisir de vous informer que votre inscription au programme <strong>Boost & Success</strong> a été <span style="color: #059669; font-weight: bold;">approuvée</span> avec succès!</p>
+                      <p>Votre paiement a été validé et vous êtes maintenant officiellement membre de notre communauté exclusive d'entrepreneurs ambitieux.</p>
+                  </div>
 
-              ${groupLinkSection}
+                  ${groupLinkSection}
 
-              <p style="margin-top: 30px; padding: 20px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 5px;">
-                  <strong>Document joint:</strong> Un PDF de vos conditions d'acceptation signées a été joint à cet email pour vos archives.
-              </p>
+                  <div class="document-section">
+                      <h3>📋 Document d'Archivage</h3>
+                      <p>Un PDF de vos conditions d'acceptation signées a été joint à cet email pour vos archives personnelles.</p>
+                      <p>Ce document atteste de votre adhésion volontaire aux termes du programme.</p>
+                  </div>
 
-              <p style="margin-top: 30px;">Merci de rejoindre notre communauté d'entrepreneurs!</p>
+                  <p style="text-align: center; margin: 30px 0; font-size: 16px; color: #374151;">
+                      Merci de rejoindre notre communauté d'entrepreneurs passionnés!<br>
+                      <strong>L'équipe Boost & Success</strong>
+                  </p>
+              </div>
 
               <div class="footer">
-                  <p>© 2026 Boost & Success - Tous droits réservés</p>
-                  <p>Questions? Contactez-nous à <a href="mailto:adinaroles@gmail.com">adinaroles@gmail.com</a></p>
+                  <div class="footer-logo">BOOST & SUCCESS</div>
+                  <p>Programme d'Accélération Entrepreneuriale</p>
+                  <div class="footer-links">
+                      <a href="mailto:adinaroles@gmail.com">Contact</a>
+                      <a href="#">CGU</a>
+                      <a href="#">Politique de Confidentialité</a>
+                  </div>
+                  <p>&copy; 2026 Boost & Success. Tous droits réservés.</p>
               </div>
           </div>
       </body>
