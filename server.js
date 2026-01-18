@@ -1070,8 +1070,32 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
 });
 
 // Route pour admin - voir les paiements en attente
-app.get('/admin/pending-payments', requireAdminAuth, (req, res) => {
-  res.json(pendingPaymentsData);
+app.get('/admin/pending-payments', requireAdminAuth, async (req, res) => {
+  // Charger les paiements en attente depuis Supabase
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('pending_payments')
+        .select('*');
+
+      if (error) {
+        console.error('❌ Erreur chargement paiements en attente depuis Supabase:', error.message);
+        // En cas d'erreur, retourner les données en mémoire
+        res.json(pendingPaymentsData);
+      } else {
+        // Mettre à jour la variable en mémoire et retourner les données
+        pendingPaymentsData = data;
+        res.json(data);
+      }
+    } catch (error) {
+      console.error('❌ Erreur critique chargement paiements en attente depuis Supabase:', error.message);
+      // En cas d'erreur critique, retourner les données en mémoire
+      res.json(pendingPaymentsData);
+    }
+  } else {
+    // Si Supabase n'est pas disponible, utiliser les données en mémoire
+    res.json(pendingPaymentsData);
+  }
 });
 
 // Route pour admin - voir les inscriptions
