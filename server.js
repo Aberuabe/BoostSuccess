@@ -1303,21 +1303,23 @@ app.post('/admin/toggle-session', requireAdminAuth, async (req, res) => {
     console.log('🔍 Avant basculement - Config actuelle:', config);
 
     // Gérer les deux conventions de nommage
-    const currentStatus = config.sessionOpen || config.session_open;
+    const currentStatus = config.session_open !== undefined ? config.session_open : config.sessionOpen;
     console.log('🔍 Statut actuel des inscriptions:', currentStatus);
 
-    config.sessionOpen = !currentStatus;
-    config.session_open = !currentStatus;
+    // Créer un nouvel objet pour éviter les problèmes de référence
+    const updatedConfig = { ...config };
+    updatedConfig.sessionOpen = !currentStatus;
+    updatedConfig.session_open = !currentStatus;
 
     console.log('🔍 Nouveau statut des inscriptions:', !currentStatus);
 
-    await saveConfig(config);
+    await saveConfig(updatedConfig);
     console.log('🔍 Config sauvegardée avec succès');
 
     res.json({
       success: true,
-      message: (config.sessionOpen || config.session_open) ? 'Inscriptions ouvertes' : 'Inscriptions fermées',
-      sessionOpen: config.sessionOpen || config.session_open
+      message: (updatedConfig.sessionOpen || updatedConfig.session_open) ? 'Inscriptions ouvertes' : 'Inscriptions fermées',
+      sessionOpen: updatedConfig.sessionOpen || updatedConfig.session_open
     });
   } catch (error) {
     console.error('Erreur:', error);
