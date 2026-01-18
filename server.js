@@ -1019,6 +1019,25 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
 
     pendingPaymentsData.push(paymentData);
 
+    // Sauvegarder dans Supabase si disponible
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('pending_payments')
+          .insert([paymentData]);
+
+        if (error) {
+          console.error('❌ Erreur sauvegarde paiement dans Supabase:', error.message);
+          // Ne pas retourner d'erreur pour ne pas bloquer le processus
+        } else {
+          console.log('✅ Paiement sauvegardé dans Supabase:', paymentData.nom);
+        }
+      } catch (error) {
+        console.error('❌ Erreur critique sauvegarde paiement dans Supabase:', error.message);
+        // Ne pas retourner d'erreur pour ne pas bloquer le processus
+      }
+    }
+
     // Notification via Telegram à l'administrateur (envoyée de manière asynchrone pour ne pas bloquer la réponse)
     const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN; // Token du bot Telegram
     const adminChatId = process.env.TELEGRAM_CHAT_ID; // ID du chat de l'administrateur
