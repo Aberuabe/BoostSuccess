@@ -1022,9 +1022,24 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
     // Sauvegarder dans Supabase si disponible
     if (supabase) {
       try {
+        // Préparer les données pour correspondre à la structure de la table Supabase
+        const supabasePaymentData = {
+          id: paymentData.id,
+          nom: paymentData.nom,
+          email: paymentData.email,
+          whatsapp: paymentData.whatsapp,
+          projet: paymentData.projet,
+          method: paymentData.method,
+          status: paymentData.status,
+          date: paymentData.date,
+          proof: paymentData.proof || null,
+          proof_mime: paymentData.proofMime || null,
+          transaction_id: paymentData.transactionId || null
+        };
+
         const { error } = await supabase
           .from('pending_payments')
-          .insert([paymentData]);
+          .insert([supabasePaymentData]);
 
         if (error) {
           console.error('❌ Erreur sauvegarde paiement dans Supabase:', error.message);
