@@ -455,7 +455,7 @@ async function saveConfig(config) {
       console.log('💾 Tentative de mise à jour de la configuration dans Supabase:', configToUpdate);
 
       // Utiliser update pour ne modifier que la ligne existante (pas de création possible)
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('config')
         .update(configToUpdate)
         .eq('id', config.id || 1);
@@ -465,6 +465,11 @@ async function saveConfig(config) {
         // Ne pas retourner d'erreur pour ne pas bloquer le processus
       } else {
         console.log('✅ Configuration mise à jour avec succès dans Supabase');
+        console.log('✅ Données retournées:', data);
+
+        // Vérifier que la mise à jour a bien eu lieu en rechargeant la config
+        const updatedConfig = await getConfig();
+        console.log('🔄 Config après mise à jour:', updatedConfig);
       }
     } catch (error) {
       console.error('❌ Erreur critique sauvegarde config:', error.message);
