@@ -408,6 +408,8 @@ async function getConfig() {
         .select('*')
         .single();
 
+      console.log('🔍 Chargement config - Data:', data, 'Error:', error);
+
       if (error) {
         if (error.code === 'PGRST116') { // Row not found
           console.warn('⚠️ Configuration non trouvée dans Supabase, utilisation des valeurs par défaut');
@@ -425,6 +427,7 @@ async function getConfig() {
       if (data) {
         configData = data;
         MAX_INSCRIPTIONS = data.max_places || data.maxPlaces || 5;
+        console.log('🔍 Config chargée depuis Supabase:', configData);
       }
 
       return configData;
@@ -435,6 +438,7 @@ async function getConfig() {
     }
   } else {
     // Si Supabase n'est pas disponible, utiliser les données locales
+    console.log('🔍 Supabase non disponible, utilisation des données en mémoire:', configData);
     return configData;
   }
 }
