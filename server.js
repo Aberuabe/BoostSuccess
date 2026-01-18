@@ -1031,7 +1031,7 @@ app.post('/api/confirm-payment', paymentLimiter, upload.single('proof'), async (
           projet: paymentData.projet,
           method: paymentData.method,
           status: paymentData.status,
-          date: paymentData.date,
+          created_at: paymentData.date,
           proof: paymentData.proof || null,
           proof_mime: paymentData.proofMime || null,
           transaction_id: paymentData.transactionId || null
