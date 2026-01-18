@@ -1452,26 +1452,30 @@ app.post('/admin/toggle-session', requireAdminAuth, (req, res) => {
 });
 
 // Route pour admin - mettre à jour le nombre de places
-app.post('/admin/update-places', requireAdminAuth, (req, res) => {
+app.post('/admin/update-places', requireAdminAuth, async (req, res) => {
   try {
     const { maxPlaces, action } = req.body;
-    const config = getConfig();
+    const config = await getConfig();
 
     if (action === 'reset') {
       config.maxPlaces = 5;
     } else if (action === 'increment' && maxPlaces) {
-      config.maxPlaces += parseInt(maxPlaces);
+      const placesToAdd = parseInt(maxPlaces);
+      if (isNaN(placesToAdd)) {
+        return res.status(400).json({ error: 'Valeur de places invalide' });
+      }
+      config.maxPlaces = (config.maxPlaces || config.max_places || 5) + placesToAdd;
     } else {
       return res.status(400).json({ error: 'Action ou valeur invalide' });
     }
 
-    saveConfig(config);
-    MAX_INSCRIPTIONS = config.maxPlaces;
+    await saveConfig(config);
+    MAX_INSCRIPTIONS = config.maxPlaces || config.max_places || 5;
 
     res.json({
       success: true,
-      message: `Nombre de places mis à jour: ${config.maxPlaces}`,
-      maxPlaces: config.maxPlaces
+      message: `Nombre de places mis à jour: ${config.maxPlaces || config.max_places || 5}`,
+      maxPlaces: config.maxPlaces || config.max_places || 5
     });
   } catch (error) {
     console.error('Erreur:', error);
