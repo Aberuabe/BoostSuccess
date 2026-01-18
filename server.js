@@ -790,6 +790,37 @@ async function sendEmailWithAttachment(toEmail, subject, htmlContent, attachment
   }
 }
 
+// Fonction pour envoyer un email avec une pièce jointe à partir d'un buffer (pour environnement serverless)
+async function sendEmailWithAttachmentFromBuffer(toEmail, subject, htmlContent, attachmentName, attachmentBuffer) {
+  if (!emailTransporter) {
+    console.warn('⚠️ SMTP non configuré. Configurez EMAIL_USER et EMAIL_PASSWORD dans .env pour activer les emails SMTP');
+    return false;
+  }
+
+  try {
+    console.log(`📧 Envoi email avec pièce jointe depuis buffer SMTP à ${toEmail}...`);
+
+    const mailOptions = {
+      from: EMAIL_USER,
+      to: toEmail,
+      subject: subject,
+      html: htmlContent,
+      attachments: [{
+        filename: attachmentName,
+        content: attachmentBuffer  // Utilisation directe du buffer
+      }]
+    };
+
+    await emailTransporter.sendMail(mailOptions);
+
+    console.log(`✅ Email avec pièce jointe depuis buffer SMTP envoyé à ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Erreur Email avec pièce jointe depuis buffer SMTP:', error.message);
+    return false;
+  }
+}
+
 // Route pour initialiser/mettre à jour le mot de passe admin (une seule fois au démarrage)
 async function initAdminPassword() {
   try {
@@ -1309,13 +1340,13 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
       </html>
     `;
 
-    // Envoyer l'email avec le PDF joint (soit depuis Supabase, soit depuis le buffer local)
-    const emailSent = await sendEmailWithAttachment(
+    // Envoyer l'email avec le PDF joint en tant que buffer (pour environnement serverless)
+    const emailSent = await sendEmailWithAttachmentFromBuffer(
       payment.email,
       '✅ Votre inscription Boost & Success est approuvée!',
       emailHtml,
       `acceptance_${payment.nom.replace(/\s+/g, '_')}_${Date.now()}.pdf`,  // attachmentName
-      pdfPath  // attachmentPath (soit le nom dans Supabase, soit le chemin local)
+      acceptancePdfBuffer  // attachmentBuffer
     );
 
     if (!emailSent) {
