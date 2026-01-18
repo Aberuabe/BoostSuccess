@@ -657,19 +657,22 @@ async function getInscriptions() {
 
       if (error) {
         console.error('❌ Erreur chargement inscriptions depuis Supabase:', error.message);
-        return inscriptionsData; // Retourner les données en mémoire en cas d'erreur
+        // Si Supabase échoue, retourner les données en mémoire
+        return inscriptionsData || [];
       }
 
-      // Mettre à jour les données en mémoire avec celles de Supabase
-      inscriptionsData = data;
-      console.log('✅ Inscriptions chargées depuis Supabase:', data.length);
-      return data;
+      // Toujours retourner les données de Supabase sans les sauvegarder en mémoire
+      // pour garantir la fraîcheur des données dans un environnement serverless
+      console.log('✅ Inscriptions chargées depuis Supabase:', data?.length || 0);
+      return data || [];
     } catch (error) {
       console.error('❌ Erreur critique chargement inscriptions depuis Supabase:', error.message);
-      return inscriptionsData; // Retourner les données en mémoire en cas d'erreur
+      // En cas d'erreur critique, retourner les données en mémoire
+      return inscriptionsData || [];
     }
   } else {
-    return inscriptionsData;
+    // Si Supabase n'est pas disponible, utiliser les données locales
+    return inscriptionsData || [];
   }
 }
 
