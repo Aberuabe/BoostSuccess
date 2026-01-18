@@ -450,7 +450,7 @@ async function saveConfig(config) {
       const configToSave = {
         id: config.id || 1,
         max_places: config.maxPlaces || config.max_places || 5,
-        session_open: config.sessionOpen || config.sessionOpen || true
+        session_open: config.sessionOpen || config.session_open || true
       };
 
       // Utiliser upsert pour créer ou mettre à jour la configuration
