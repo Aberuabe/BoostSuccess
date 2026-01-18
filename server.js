@@ -879,15 +879,6 @@ app.post('/api/download-acceptance-pdf', async (req, res) => {
 app.get('/api/inscriptions-count', async (req, res) => {
   const inscriptions = await getInscriptions();
 
-  // Charger le statut des inscriptions depuis le fichier local
-  const configPath = path.join(__dirname, 'toggle-config.json');
-  let config = { sessionOpen: true }; // Valeur par défaut
-
-  if (fs.existsSync(configPath)) {
-    const configFile = fs.readFileSync(configPath, 'utf8');
-    config = JSON.parse(configFile);
-  }
-
   // Charger la configuration générale depuis le fichier local
   const generalConfigPath = path.join(__dirname, 'config.json');
   let generalConfig = { maxPlaces: 5 }; // Valeur par défaut
@@ -897,13 +888,13 @@ app.get('/api/inscriptions-count', async (req, res) => {
     generalConfig = JSON.parse(generalConfigFile);
   }
 
-  logger.info(`Inscriptions: ${inscriptions.length}/${generalConfig.maxPlaces}, Session: ${config.sessionOpen}`);
+  logger.info(`Inscriptions: ${inscriptions.length}/${generalConfig.maxPlaces}, Session: ${sessionOpenStatus}`);
 
   res.json({
     count: inscriptions.length,
     max: generalConfig.maxPlaces,
     available: inscriptions.length < generalConfig.maxPlaces,
-    sessionOpen: config.sessionOpen
+    sessionOpen: sessionOpenStatus
   });
 });
 
@@ -1085,15 +1076,6 @@ app.get('/admin/inscriptions', requireAdminAuth, async (req, res) => {
   // Charger les inscriptions depuis la fonction existante
   const inscriptions = await getInscriptions();
 
-  // Charger le statut des inscriptions depuis le fichier local
-  const configPath = path.join(__dirname, 'toggle-config.json');
-  let config = { sessionOpen: true }; // Valeur par défaut
-
-  if (fs.existsSync(configPath)) {
-    const configFile = fs.readFileSync(configPath, 'utf8');
-    config = JSON.parse(configFile);
-  }
-
   // Charger la configuration générale depuis le fichier local
   const generalConfigPath = path.join(__dirname, 'config.json');
   let generalConfig = { maxPlaces: 5 }; // Valeur par défaut
@@ -1107,7 +1089,7 @@ app.get('/admin/inscriptions', requireAdminAuth, async (req, res) => {
     inscriptions,
     total: inscriptions.length,
     max: generalConfig.maxPlaces,
-    sessionOpen: config.sessionOpen
+    sessionOpen: sessionOpenStatus
   });
 });
 
@@ -1332,40 +1314,26 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
   }
 });
 
+// Variable en mémoire pour le statut des inscriptions
+let sessionOpenStatus = true; // Valeur par défaut
+
 // Route pour admin - ouvrir/fermer les inscriptions
 app.post('/admin/toggle-session', requireAdminAuth, (req, res) => {
   try {
-    // Lire la configuration depuis le fichier local
-    const configPath = path.join(__dirname, 'toggle-config.json');
-    let config = { sessionOpen: true }; // Valeur par défaut
-
-    if (fs.existsSync(configPath)) {
-      const configFile = fs.readFileSync(configPath, 'utf8');
-      config = JSON.parse(configFile);
-    }
-
-    console.log('🔍 Avant basculement - Config actuelle:', config);
+    console.log('🔍 Avant basculement - Statut actuel:', sessionOpenStatus);
 
     // Basculer le statut
-    const currentStatus = config.sessionOpen;
-    console.log('🔍 Statut actuel des inscriptions:', currentStatus);
+    sessionOpenStatus = !sessionOpenStatus;
 
-    config.sessionOpen = !currentStatus;
-
-    console.log('🔍 Nouveau statut des inscriptions:', !currentStatus);
-
-    // Sauvegarder dans le fichier local
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-
-    console.log('🔍 Config sauvegardée avec succès dans le fichier local');
+    console.log('🔍 Nouveau statut des inscriptions:', sessionOpenStatus);
 
     // Mettre à jour la variable en mémoire
-    configData = { ...configData, sessionOpen: config.sessionOpen };
+    configData = { ...configData, sessionOpen: sessionOpenStatus };
 
     res.json({
       success: true,
-      message: config.sessionOpen ? 'Inscriptions ouvertes' : 'Inscriptions fermées',
-      sessionOpen: config.sessionOpen
+      message: sessionOpenStatus ? 'Inscriptions ouvertes' : 'Inscriptions fermées',
+      sessionOpen: sessionOpenStatus
     });
   } catch (error) {
     console.error('Erreur:', error);
