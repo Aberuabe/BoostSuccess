@@ -1,3 +1,11 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Boost & Success | Ingénierie de Projets</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #0a0a0c;
@@ -339,6 +347,39 @@
             .hero { padding-top: 140px; }
             .btn-outline { margin-left: 0; margin-top: 12px; width: 100%; }
             .btn-primary { width: 100%; }
+        }
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .hero {
+                padding: 120px 0 40px;
+            }
+            .hero h1 {
+                font-size: 2.2rem;
+                letter-spacing: -1px;
+            }
+            .glass-panel {
+                padding: 24px 16px;
+            }
+            .status-indicator span {
+                display: none; /* Cache le texte pour gagner de la place */
+            }
+            .status-indicator {
+                padding: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            .btn {
+                width: 100%;
+                margin-left: 0 !important;
+                margin-top: 10px;
+            }
+            .validation-box {
+                padding: 20px 15px;
+            }
         }
     </style>
 </head>
