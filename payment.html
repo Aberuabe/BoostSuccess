@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement - Boost & Success</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --secondary: #7000ff;
+            --bg: #030712;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f3f4f6;
+            --text-dim: #9ca3af;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .payment-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .instructions {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed var(--primary);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 14px 28px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-dim);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            color: white;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        #success-msg {
+            display: none;
+            color: #10b981;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-card">
+        <h1>Étape d'Ingénierie</h1>
+        <p>Votre projet a été validé techniquement. Pour démarrer la phase de conception détaillée et la préparation de votre dossier pour les fondations, veuillez finaliser votre adhésion.</p>
+        
+        <p style="font-size: 0.85rem; color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 20px;">
+            <strong>Avis important :</strong> Ces frais couvrent l'expertise en ingénierie de projet, la validation technique et la préparation de votre dossier. Boost & Success n'octroie pas directement les fonds. Notre rôle est de maximiser vos chances auprès des financeurs cibles.
+        </p>
+
+        <div class="instructions">
+            <p>Frais d'adhésion et d'ingénierie : <strong>10.000 FCFA</strong> vers :</p>
+            <h2 style="letter-spacing: 2px;">01 66 19 45 95</h2>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">(MTN Mobile Money)</p>
+        </div>
+
+        <form id="payment-form">
+            <div class="form-group">
+                <label>Type de preuve</label>
+                <select id="proof-method" required>
+                    <option value="screenshot">Capture d'écran</option>
+                    <option value="transaction-id">ID de Transaction</option>
+                </select>
+            </div>
+
+            <div id="screenshot-group" class="form-group">
+                <label>Télécharger la capture</label>
+                <input type="file" id="proof-file" accept="image/*">
+            </div>
+
+            <div id="transaction-group" class="form-group" style="display: none;">
+                <label>ID de Transaction</label>
+                <input type="text" id="transaction-id" placeholder="Entrez l'ID">
+            </div>
+
+            <button type="submit" class="btn" id="submit-btn">Envoyer la preuve de paiement</button>
+        </form>
+
+        <div id="success-msg">✅ Preuve envoyée ! Nous vérifions votre paiement dans les 30 minutes.</div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        const urlParams = new URLSearchParams(window.location.search);
+        const submissionId = urlParams.get('id');
+
+        if (!submissionId) {
+            alert("ID de session manquant. Veuillez utiliser le lien reçu par email.");
+            document.body.innerHTML = "<h1>Lien invalide</h1>";
+        }
+
+        const methodSelect = document.getElementById('proof-method');
+        const screenshotGroup = document.getElementById('screenshot-group');
+        const transactionGroup = document.getElementById('transaction-group');
+
+        methodSelect.addEventListener('change', (e) => {
+            screenshotGroup.style.display = e.target.value === 'screenshot' ? 'block' : 'none';
+            transactionGroup.style.display = e.target.value === 'transaction-id' ? 'block' : 'none';
+        });
+
+        document.getElementById('payment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.textContent = "Envoi...";
+
+            const formData = new FormData();
+            formData.append('id', submissionId);
+            formData.append('method', methodSelect.value);
+
+            if (methodSelect.value === 'screenshot') {
+                const file = document.getElementById('proof-file').files[0];
+                if (!file) return alert("Veuillez sélectionner une image");
+                formData.append('proof', file);
+            } else {
+                const txId = document.getElementById('transaction-id').value.trim();
+                if (!txId) return alert("Veuillez entrer l'ID");
+                formData.append('transactionId', txId);
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/api/confirm-payment`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('payment-form').style.display = 'none';
+                    document.getElementById('success-msg').style.display = 'block';
+                } else {
+                    alert("Erreur: " + data.error);
+                    btn.disabled = false;
+                    btn.textContent = "Envoyer la preuve de paiement";
+                }
+            } catch (err) {
+                alert("Erreur de connexion");
+                btn.disabled = false;
+                btn.textContent = "Envoyer la preuve de paiement";
+            }
+        });
+    </script>
+</body>
+</html>

@@ -3,60 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Boost & Success</title>
+    <title>Admin Dashboard | Boost & Success</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #00f2ff;
+            --secondary: #7000ff;
+            --bg: #030712;
+            --card-bg: rgba(17, 24, 39, 0.8);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f3f4f6;
+            --text-dim: #9ca3af;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: #e2e8f0;
-            padding: 20px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(112, 0, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.05) 0%, transparent 40%);
+            min-height: 100vh;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
 
+        /* Header */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 20px 30px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
             margin-bottom: 30px;
-            padding: 20px;
-            background: rgba(30, 41, 59, 0.95);
-            border: 1px solid #00d4ff;
-            border-radius: 10px;
+            position: sticky;
+            top: 20px;
+            z-index: 100;
         }
 
-        .header h1 {
+        .header-left h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             display: flex;
             align-items: center;
-            gap: 10px;
-            color: #00d4ff;
+            gap: 12px;
         }
 
-        .logout-btn {
-            background: #ef4444;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-        }
+        .header-right { display: flex; gap: 12px; align-items: center; }
 
-        .logout-btn:hover {
-            background: #dc2626;
-        }
-
-        .controls {
+        /* Controls Section */
+        .controls-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
@@ -64,835 +73,424 @@
         }
 
         .control-card {
-            background: rgba(30, 41, 59, 0.95);
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        .control-card h3 {
-            color: #00d4ff;
-            margin-bottom: 15px;
+        .control-card h3 { font-size: 1rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+
+        .toggle-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-open { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid var(--success); }
+        .status-closed { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+
+        .capacity-control {
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #94a3b8;
-        }
-
-        input, select, button {
-            width: 100%;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.2);
             padding: 10px;
-            border: 1px solid #475569;
-            border-radius: 5px;
-            background: rgba(0, 0, 0, 0.3);
-            color: #e2e8f0;
+            border-radius: 12px;
+            border: 1px solid var(--border);
         }
 
-        .btn-control {
-            background: linear-gradient(135deg, #00d4ff, #7000ff);
-            color: white;
+        .capacity-control input {
+            background: transparent;
             border: none;
-            padding: 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-top: 10px;
+            color: #fff;
+            width: 50px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 700;
         }
 
-        .btn-control:hover {
-            opacity: 0.9;
-        }
-
-        .stats {
+        /* Stats Grid */
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
 
         .stat-card {
-            background: rgba(30, 41, 59, 0.95);
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 20px;
-        }
-
-        .stat-card h3 {
-            color: #94a3b8;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-        }
-
-        .stat-card .value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #00d4ff;
-        }
-
-        .section {
-            background: rgba(30, 41, 59, 0.95);
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .section h2 {
-            color: #00d4ff;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .payment-item {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid #00d4ff;
-        }
-
-        .payment-info {
-            margin-bottom: 10px;
-        }
-
-        .payment-info div {
-            margin: 5px 0;
-            font-size: 0.9rem;
-        }
-
-        .payment-info strong {
-            color: #00d4ff;
-        }
-
-        .payment-status {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-
-        .status-pending {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fbbf24;
-        }
-
-        .status-approved {
-            background: rgba(16, 185, 129, 0.2);
-            color: #6ee7b7;
-        }
-
-        .payment-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .btn-small {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
             transition: 0.3s;
         }
 
-        .btn-approve {
-            background: #10b981;
-            color: white;
+        .stat-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+
+        .stat-card .value { font-size: 2.5rem; font-weight: 800; color: var(--primary); margin: 10px 0; }
+        .stat-card .label { color: var(--text-dim); font-size: 0.9rem; font-weight: 600; }
+
+        /* Sections */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
         }
 
-        .btn-approve:hover {
-            background: #059669;
-        }
-
-        .btn-reject {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-reject:hover {
-            background: #dc2626;
-        }
-
-        .btn-view-proof {
-            background: #7000ff;
-            color: white;
-        }
-
-        .btn-view-proof:hover {
-            background: #5a00cc;
-        }
-
-        .no-payments {
-            text-align: center;
+        .section-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
             padding: 30px;
-            color: #94a3b8;
+            min-height: 400px;
         }
 
-        .empty-state {
+        .section-header {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
         }
 
-        .empty-state i {
-            font-size: 3rem;
-            color: #475569;
-        }
+        .section-header h2 { font-size: 1.25rem; display: flex; align-items: center; gap: 12px; }
 
-        #proof-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        #proof-modal.show {
+        /* Data Items */
+        .data-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: 0.3s;
             display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        #proof-img {
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 10px;
-        }
+        .data-item:hover { background: rgba(255, 255, 255, 0.05); border-color: var(--primary); }
 
-        .modal-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: white;
+        .item-main { flex: 1; }
+        .item-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 5px; color: #fff; }
+        .item-meta { display: flex; gap: 15px; color: var(--text-dim); font-size: 0.85rem; }
+        .item-meta span { display: flex; align-items: center; gap: 5px; }
+
+        .item-actions { display: flex; gap: 10px; }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 12px;
             border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.9rem;
             cursor: pointer;
-            font-size: 1.5rem;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
         }
 
-        .approval-modal {
+        .btn-primary { background: var(--primary); color: #000; }
+        .btn-secondary { background: var(--secondary); color: #fff; }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid var(--success); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: #fff; }
+        .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid transparent; }
+        .btn-ghost:hover { color: #fff; background: rgba(255,255,255,0.05); }
+
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-icon { width: 40px; height: 40px; padding: 0; justify-content: center; }
+
+        /* Modals Modernized */
+        .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
             justify-content: center;
             align-items: center;
-            z-index: 2000;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
         }
 
-        .approval-modal-content {
-            background: rgba(30, 41, 59, 0.95);
-            border: 1px solid #00d4ff;
-            border-radius: 10px;
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .approval-form-group {
-            margin-bottom: 15px;
-        }
-
-        .approval-form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #94a3b8;
-        }
-
-        .approval-form-group input {
+        .modal-content {
+            background: #111827;
+            border: 1px solid var(--border);
+            border-radius: 24px;
             width: 100%;
-            padding: 10px;
-            border: 1px solid #475569;
-            border-radius: 5px;
-            background: rgba(0, 0, 0, 0.3);
-            color: #e2e8f0;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
         }
+
+        @keyframes slideUp { from { transform: translateY(20px); } to { transform: translateY(0); } }
+
+        .modal-header { padding: 25px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 30px; }
+        .modal-footer { padding: 20px 30px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+
+        textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            color: #fff;
+            font-family: inherit;
+            resize: vertical;
+            margin-top: 10px;
+        }
+
+        .project-text {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            color: var(--text);
+            font-size: 1rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            border: 1px solid var(--border);
+        }
+
+        /* Custom Alert Popups */
+        .alert-popup {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            border-radius: 16px;
+            background: #1f2937;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 2000;
+            transform: translateX(120%);
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .alert-popup.active { transform: translateX(0); }
+        .alert-icon { font-size: 1.2rem; }
+        .alert-success { border-left: 4px solid var(--success); }
+        .alert-error { border-left: 4px solid var(--danger); }
 
         @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .payment-actions {
-                flex-direction: column;
-            }
+            .header { flex-direction: column; gap: 20px; text-align: center; }
+            .data-item { flex-direction: column; gap: 15px; text-align: center; }
+            .item-meta { justify-content: center; }
+            .item-actions { width: 100%; justify-content: center; }
         }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-tachometer-alt"></i> Dashboard Admin</h1>
-            <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</button>
-        </div>
-
-        <!-- Contrôles pour gérer les inscriptions -->
-        <div class="controls">
-            <div class="control-card">
-                <h2><i class="fas fa-users"></i> Gestion des Places</h2>
-                <div class="form-group">
-                    <label for="add-places">Ajouter des places</label>
-                    <input type="number" id="add-places" placeholder="Nombre de places à ajouter" min="1">
-                </div>
-                <button class="btn-control" onclick="addPlaces()">
-                    <i class="fas fa-plus"></i> Ajouter des Places
-                </button>
-                <button class="btn-control" style="background: #f59e0b;" onclick="resetPlaces()">
-                    <i class="fas fa-redo"></i> Réinitialiser à 5 places
-                </button>
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1><i class="fas fa-shield-halved"></i> <span>DASHBOARD</span> ADMIN</h1>
             </div>
-
-            <div class="control-card">
-                <h2><i class="fas fa-toggle-on"></i> Statut des Inscriptions</h2>
-                <div class="form-group">
-                    <label>Statut actuel: <span id="session-status">Chargement...</span></label>
-                </div>
-                <button class="btn-control" onclick="toggleSession()">
-                    <i class="fas fa-sync-alt"></i> <span id="toggle-text">Charger le statut</span>
+            <div class="header-right">
+                <button class="btn btn-warning" style="background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid var(--warning);" onclick="resetAll()">
+                    <i class="fas fa-trash-can"></i> Reset Global
                 </button>
+                <button class="btn btn-outline" onclick="loadData()"><i class="fas fa-rotate"></i> Sync</button>
+                <button class="btn btn-danger" onclick="logout()"><i class="fas fa-power-off"></i> Quitter</button>
             </div>
+        </header>
 
+        <!-- Control Panel -->
+        <div class="controls-grid">
             <div class="control-card">
-                <h2><i class="fas fa-download"></i> Exporter Données</h2>
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <button class="btn-control" onclick="exportCSV()">
-                        <i class="fas fa-file-csv"></i> Exporter CSV
+                <h3><i class="fas fa-door-open"></i> Accès au Site</h3>
+                <div class="toggle-group">
+                    <span id="session-badge" class="status-badge status-open">Ouvert</span>
+                    <button id="toggle-session-btn" class="btn btn-primary" onclick="toggleSession()">
+                        <i class="fas fa-power-off"></i> <span id="toggle-text">Fermer la session</span>
                     </button>
-                    <button class="btn-control" style="background: linear-gradient(135deg, #ff6b6b, #ff8e53);" onclick="exportPDF()">
-                        <i class="fas fa-file-pdf"></i> Exporter PDF
+                </div>
+            </div>
+            <div class="control-card">
+                <h3><i class="fas fa-users"></i> Capacité des Places</h3>
+                <div class="toggle-group">
+                    <div class="capacity-control">
+                        <button class="btn btn-ghost btn-icon" onclick="updatePlaces('decrement')"><i class="fas fa-minus"></i></button>
+                        <input type="text" id="max-places-input" readonly value="5">
+                        <button class="btn btn-ghost btn-icon" onclick="updatePlaces('increment')"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="resetPlaces()">
+                        <i class="fas fa-undo"></i> Reset (5)
                     </button>
                 </div>
             </div>
         </div>
 
-        <div class="stats">
+        <!-- Stats Bar -->
+        <div class="stats-grid">
             <div class="stat-card">
-                <h3>📊 Paiements en attente</h3>
+                <div class="label">Projets à Analyser</div>
+                <div class="value" id="stat-review">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Attente Paiement</div>
                 <div class="value" id="stat-pending">0</div>
             </div>
             <div class="stat-card">
-                <h3>✅ Inscriptions approuvées</h3>
+                <div class="label">Inscrits</div>
                 <div class="value" id="stat-approved">0</div>
             </div>
             <div class="stat-card">
-                <h3>❌ Paiements rejetés</h3>
-                <div class="value" id="stat-rejected">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>👥 Total inscriptions</h3>
+                <div class="label">Total Places</div>
                 <div class="value" id="stat-total">0/5</div>
             </div>
-        </div>
-
-        <div class="section">
-            <h2><i class="fas fa-hourglass-half"></i> Paiements en attente de vérification</h2>
-            <div id="pending-list"></div>
-        </div>
-
-        <div class="section">
-            <h2><i class="fas fa-check-circle"></i> Inscriptions approuvées</h2>
-            <div id="approved-list"></div>
-        </div>
-    </div>
-
-    <!-- Modal pour approuver avec lien du groupe -->
-    <div id="approval-modal" class="approval-modal">
-        <div class="approval-modal-content">
-            <h2 style="color: #00d4ff; margin-bottom: 20px;">Approuver le Paiement</h2>
-            <div class="approval-form-group">
-                <label for="group-link">Lien du groupe privé (facultatif)</label>
-                <input type="url" id="group-link" placeholder="https://chat.whatsapp.com/...">
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button class="btn-control" onclick="confirmApprove()" style="flex: 1;">
-                    <i class="fas fa-check"></i> Approuver
-                </button>
-                <button class="btn-control" style="background: #94a3b8;" onclick="closeApprovalModal()" style="flex: 1;">
-                    <i class="fas fa-times"></i> Annuler
-                </button>
+            <div class="stat-card">
+                <div class="label">Taux d'Occupation</div>
+                <div class="value" id="stat-occupancy">0%</div>
             </div>
         </div>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-grid">
+            <!-- Review Section -->
+            <section class="section-card">
+                <div class="section-header">
+                    <h2><i class="fas fa-magnifying-glass" style="color: var(--warning)"></i> Projets en Attente d'Analyse</h2>
+                    <span class="status-badge" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);" id="count-review">0</span>
+                </div>
+                <div id="review-list">
+                    <!-- Dynamic Content -->
+                </div>
+            </section>
+
+            <!-- Pending Payments Section -->
+            <section class="section-card">
+                <div class="section-header">
+                    <h2><i class="fas fa-money-bill-transfer" style="color: var(--primary)"></i> Paiements à Vérifier</h2>
+                    <span class="status-badge" style="background: rgba(0, 242, 255, 0.1); color: var(--primary);" id="count-pending">0</span>
+                </div>
+                <div id="pending-list">
+                    <!-- Dynamic Content -->
+                </div>
+            </section>
+
+            <!-- Validated Members Section -->
+            <section class="section-card">
+                <div class="section-header">
+                    <h2><i class="fas fa-user-check" style="color: var(--success)"></i> Membres Officiels</h2>
+                    <span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--success);" id="count-approved">0</span>
+                </div>
+                <div id="approved-list">
+                    <!-- Dynamic Content -->
+                </div>
+            </section>
+        </div>
     </div>
 
-    <!-- Proof Modal -->
-    <div id="proof-modal">
-        <button class="modal-close" onclick="closeProofModal()"><i class="fas fa-times"></i></button>
-        <img id="proof-img" src="" alt="Proof">
-        <div id="proof-text" style="display: none;"></div>
+    <!-- MODAL: View Full Project -->
+    <div id="project-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-lines"></i> Détails du Projet</h3>
+                <button class="btn btn-ghost btn-icon" onclick="closeModal('project-modal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="project-details-info" style="margin-bottom: 20px;">
+                    <!-- Client info here -->
+                </div>
+                <h4>Description du projet:</h4>
+                <div class="project-text" id="project-full-text"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('project-modal')">Fermer</button>
+            </div>
+        </div>
     </div>
 
-    <script>
-        const API_URL = window.location.origin;
-        let currentPaymentId = null;
+    <!-- MODAL: Reject Project -->
+    <div id="reject-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-ban"></i> Rejeter le Projet</h3>
+                <button class="btn btn-ghost btn-icon" onclick="closeModal('reject-modal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-dim);">Veuillez indiquer le motif du rejet. Un email sera envoyé au client.</p>
+                <textarea id="reject-reason" rows="5" placeholder="Expliquez pourquoi le projet est refusé..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('reject-modal')">Annuler</button>
+                <button class="btn btn-danger" onclick="confirmRejectProject()">Confirmer le Rejet</button>
+            </div>
+        </div>
+    </div>
 
-        // Check authentication on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('adminToken');
-            if (!token) {
-                window.location.href = 'admin-login.html';
-            }
-            
-            loadSessionStatus();
-            loadPayments();
-        });
+    <!-- MODAL: Confirm Payment -->
+    <div id="confirm-payment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-check-double"></i> Confirmer l'Inscription</h3>
+                <button class="btn btn-ghost btn-icon" onclick="closeModal('confirm-payment-modal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-dim);">Le paiement a été vérifié avec succès ? Vous pouvez ajouter un lien vers le groupe privé (optionnel).</p>
+                <input type="text" id="group-link-input" placeholder="Lien d'invitation (ex: https://wa.me/...)">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('confirm-payment-modal')">Annuler</button>
+                <button class="btn btn-success" onclick="confirmApprovePayment()">Valider l'Adhésion</button>
+            </div>
+        </div>
+    </div>
 
-        // Load session status
-        async function loadSessionStatus() {
-            try {
-                const token = localStorage.getItem('adminToken');
-                const headers = { 'x-admin-token': token };
+    <!-- MODAL: Proof Preview -->
+    <div id="proof-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-receipt"></i> Preuve de Paiement</h3>
+                <button class="btn btn-ghost btn-icon" onclick="closeModal('proof-modal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="proof-container">
+                <!-- Proof Image or ID -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('proof-modal')">Fermer</button>
+            </div>
+        </div>
+    </div>
 
-                const response = await fetch(`${API_URL}/admin/inscriptions?t=${new Date().getTime()}`, { headers });
-                const data = await response.json();
+    <!-- Custom Alert Popup -->
+    <div id="custom-alert" class="alert-popup">
+        <div class="alert-icon" id="alert-icon"></div>
+        <div class="alert-message" id="alert-message"></div>
+    </div>
 
-                const statusElement = document.getElementById('session-status');
-                const toggleText = document.getElementById('toggle-text');
-
-                if (data.sessionOpen) {
-                    statusElement.textContent = 'OUVERTES';
-                    statusElement.style.color = '#10b981';
-                    toggleText.textContent = 'Fermer les inscriptions';
-                } else {
-                    statusElement.textContent = 'FERMÉES';
-                    statusElement.style.color = '#ef4444';
-                    toggleText.textContent = 'Ouvrir les inscriptions';
-                }
-
-                // Mettre à jour également le total des inscriptions dans la section stats
-                document.getElementById('stat-total').textContent = `${data.total}/${data.max}`;
-            } catch (error) {
-                console.error('Erreur chargement statut:', error);
-            }
-        }
-
-        // Toggle session
-        async function toggleSession() {
-            try {
-                const token = localStorage.getItem('adminToken');
-                const headers = { 'x-admin-token': token };
-                
-                const response = await fetch(`${API_URL}/admin/toggle-session?t=${new Date().getTime()}`, {
-                    method: 'POST',
-                    headers: { 'x-admin-token': token, 'Content-Type': 'application/json' }
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    alert(data.message);
-                    loadSessionStatus();
-                    loadPayments(); // Reload stats
-                } else {
-                    alert('Erreur: ' + data.error);
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                alert('Erreur serveur');
-            }
-        }
-
-        // Add places
-        async function addPlaces() {
-            const addPlacesInput = document.getElementById('add-places');
-            const placesToAdd = parseInt(addPlacesInput.value);
-            
-            if (!placesToAdd || placesToAdd <= 0) {
-                alert('Veuillez entrer un nombre valide de places à ajouter');
-                return;
-            }
-            
-            if (!confirm(`Êtes-vous sûr de vouloir ajouter ${placesToAdd} places?`)) {
-                return;
-            }
-            
-            try {
-                const token = localStorage.getItem('adminToken');
-                
-                const response = await fetch(`${API_URL}/admin/update-places`, {
-                    method: 'POST',
-                    headers: { 'x-admin-token': token, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ maxPlaces: placesToAdd, action: 'increment' })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    alert(data.message);
-                    addPlacesInput.value = '';
-                    loadSessionStatus();
-                    loadPayments(); // Reload stats
-                } else {
-                    alert('Erreur: ' + data.error);
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                alert('Erreur serveur');
-            }
-        }
-
-        // Reset places
-        async function resetPlaces() {
-            if (!confirm('Êtes-vous sûr de vouloir réinitialiser à 5 places?')) {
-                return;
-            }
-            
-            try {
-                const token = localStorage.getItem('adminToken');
-                
-                const response = await fetch(`${API_URL}/admin/update-places`, {
-                    method: 'POST',
-                    headers: { 'x-admin-token': token, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'reset' })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    alert(data.message);
-                    loadSessionStatus();
-                    loadPayments(); // Reload stats
-                } else {
-                    alert('Erreur: ' + data.error);
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                alert('Erreur serveur');
-            }
-        }
-
-        // Export CSV
-        async function exportCSV() {
-            try {
-                const token = localStorage.getItem('adminToken');
-
-                // Create a POST request to get the CSV data
-                const response = await fetch(`${API_URL}/admin/export-csv`, {
-                    method: 'GET',
-                    headers: {
-                        'x-admin-token': token
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Erreur serveur');
-                }
-
-                // Create a Blob from the response
-                const blob = await response.blob();
-
-                // Create a download link
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `inscriptions_${new Date().toISOString().slice(0,10)}.csv`;
-                document.body.appendChild(a);
-                a.click();
-
-                // Clean up
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            } catch (error) {
-                console.error('Erreur:', error);
-                alert('Erreur: ' + error.message);
-            }
-        }
-
-        // Export PDF
-        async function exportPDF() {
-            try {
-                const token = localStorage.getItem('adminToken');
-
-                // Create a GET request to get the PDF data
-                const response = await fetch(`${API_URL}/admin/export-pdf`, {
-                    method: 'GET',
-                    headers: {
-                        'x-admin-token': token
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Erreur serveur');
-                }
-
-                // Create a Blob from the response
-                const blob = await response.blob();
-
-                // Create a download link
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `inscriptions_${new Date().toISOString().slice(0,10)}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-
-                // Clean up
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            } catch (error) {
-                console.error('Erreur:', error);
-                alert('Erreur: ' + error.message);
-            }
-        }
-
-        // Load payments on page load
-        async function loadPayments() {
-            try {
-                const token = localStorage.getItem('adminToken');
-                const headers = { 'x-admin-token': token };
-
-                // Get pending payments
-                const paymentRes = await fetch(`${API_URL}/admin/pending-payments`, { headers });
-                const payments = await paymentRes.json();
-
-                // Get inscriptions
-                const inscriptionsRes = await fetch(`${API_URL}/admin/inscriptions`, { headers });
-                const inscriptions = await inscriptionsRes.json();
-
-                // Update stats
-                const pending = payments.filter(p => p.status === 'pending').length;
-                const approved = payments.filter(p => p.status === 'approved').length;
-                const rejected = payments.filter(p => p.status === 'rejected').length;
-
-                document.getElementById('stat-pending').textContent = pending;
-                document.getElementById('stat-approved').textContent = approved;
-                document.getElementById('stat-rejected').textContent = rejected;
-                document.getElementById('stat-total').textContent = `${inscriptions.total}/${inscriptions.max}`;
-
-                // Display pending payments
-                const pendingList = document.getElementById('pending-list');
-                const pendingPayments = payments.filter(p => p.status === 'pending');
-
-                if (pendingPayments.length === 0) {
-                    pendingList.innerHTML = `
-                        <div class="no-payments">
-                            <div class="empty-state">
-                                <i class="fas fa-inbox"></i>
-                                <p>Aucun paiement en attente</p>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    pendingList.innerHTML = pendingPayments.map(payment => `
-                        <div class="payment-item">
-                            <div class="payment-info">
-                                <div>
-                                    <strong>Nom:</strong> ${payment.nom}
-                                </div>
-                                <div>
-                                    <strong>Email:</strong> ${payment.email}
-                                </div>
-                                <div>
-                                    <strong>WhatsApp:</strong> ${payment.whatsapp}
-                                </div>
-                                <div>
-                                    <strong>Projet:</strong> ${payment.projet}
-                                </div>
-                                <div>
-                                    <strong>Type de preuve:</strong> ${payment.method === 'screenshot' ? 'Screenshot' : 'ID de Transaction'}
-                                </div>
-                                ${payment.method === 'transaction-id' && payment.transactionId ? `<div><strong>ID Transaction:</strong> ${payment.transactionId}</div>` : ''}
-                                <div>
-                                    <strong>Date:</strong> ${payment.date}
-                                </div>
-                                <div>
-                                    <span class="payment-status status-pending">En attente</span>
-                                </div>
-                            </div>
-                            <div class="payment-actions">
-                                <button class="btn-small btn-view-proof" onclick="viewProof('${payment.id}')">
-                                    <i class="fas fa-image"></i> Voir preuve
-                                </button>
-                                <button class="btn-small btn-approve" onclick="openApprovalModal('${payment.id}')">
-                                    <i class="fas fa-check"></i> Approuver
-                                </button>
-                                <button class="btn-small btn-reject" onclick="rejectPayment('${payment.id}')">
-                                    <i class="fas fa-times"></i> Rejeter
-                                </button>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-
-                // Display approved payments
-                const approvedList = document.getElementById('approved-list');
-                const approvedPayments = payments.filter(p => p.status === 'approved');
-
-                if (approvedPayments.length === 0) {
-                    approvedList.innerHTML = `
-                        <div class="no-payments">
-                            <div class="empty-state">
-                                <i class="fas fa-inbox"></i>
-                                <p>Aucune inscription approuvée</p>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    approvedList.innerHTML = approvedPayments.map(payment => `
-                        <div class="payment-item approved">
-                            <div class="payment-info">
-                                <div>
-                                    <strong>Nom:</strong> ${payment.nom}
-                                </div>
-                                <div>
-                                    <strong>Email:</strong> ${payment.email}
-                                </div>
-                                <div>
-                                    <strong>WhatsApp:</strong> ${payment.whatsapp}
-                                </div>
-                                <div>
-                                    <strong>Projet:</strong> ${payment.projet}
-                                </div>
-                                <div>
-                                    <strong>Date:</strong> ${payment.date}
-                                </div>
-                                <div>
-                                    <span class="payment-status status-approved">Approuvé</span>
-                                </div>
-                            </div>
-                            <div class="payment-actions">
-                                <button class="btn-small btn-view-proof" onclick="viewProof('${payment.id}')">
-                                    <i class="fas fa-image"></i> Voir preuve
-                                </button>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-
-                // Store payments for proof viewing
-                window.paymentsData = payments;
-
-            } catch (error) {
-                console.error('Erreur:', error);
-            }
-        }
-
-        // Open approval modal with group link input
-        function openApprovalModal(id) {
-            currentPaymentId = id;
-            document.getElementById('approval-modal').style.display = 'flex';
-            document.getElementById('group-link').value = '';
-        }
-
-        // Close approval modal
-        function closeApprovalModal() {
-            document.getElementById('approval-modal').style.display = 'none';
-            currentPaymentId = null;
-        }
-
-        // Confirm approve with group link
-        async function confirmApprove() {
-            if (!currentPaymentId) return;
-            
-            const groupLink = document.getElementById('group-link').value.trim();
-            
-            try {
-                const token = localStorage.getItem('adminToken');
-                const res = await fetch(`${API_URL}/admin/approve-payment/${currentPaymentId}`, {
-                    method: 'POST',
-                    headers: { 'x-admin-token': token, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ groupLink: groupLink })
-                });
-
-                const data = await res.json();
-
-                if (res.ok) {
-                    alert('Paiement approuvé! Inscription enregistrée.');
-                    closeApprovalModal();
-                    loadPayments();
-                } else {
-                    alert('Erreur: ' + data.error);
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                alert('Erreur serveur');
-            }
-        }
-
-        async function rejectPayment(id) {
-            if (!confirm('Êtes-vous sûr de vouloir rejeter ce paiement?')) {
-                return;
-            }
-
-            try {
-                const token = localStorage.getItem('adminToken');
-                const res = await fetch(`${API_URL}/admin/reject-payment/${id}`, {
-                    method: 'POST',
-                    headers: { 'x-admin-token': token }
-                });
-
-                const data = await res.json();
-
-                if (res.ok) {
-                    alert('Paiement rejeté.');
-                    loadPayments();
-                } else {
-                    alert('Erreur: ' + data.error);
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                alert('Erreur serveur');
-            }
-        }
-
-        function viewProof(id) {
-            const payment = window.paymentsData.find(p => p.id === id);
-            if (payment && payment.proof) {
-                const modal = document.getElementById('proof-modal');
-                const img = document.getElementById('proof-img');
-                img.src = `data:${payment.proofMime};base64,${payment.proof}`;
-                modal.classList.add('show');
-            }
-        }
-
-        function closeProofModal() {
-            document.getElementById('proof-modal').classList.remove('show');
-        }
-
-        // Close modal on outside click
-        document.getElementById('proof-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'proof-modal') {
-                closeProofModal();
-            }
-        });
-
-        // Logout function
-        function logout() {
-            localStorage.removeItem('adminToken');
-            window.location.href = 'admin-login.html';
-        }
-
-        // Refresh every 30 seconds
-        setInterval(loadPayments, 30000);
-    </script>
+    <script src="admin.js"></script>
 </body>
 </html>
