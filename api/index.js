@@ -826,6 +826,28 @@ app.post('/api/submit', async (req, res) => {
           return res.status(409).json({ error: 'Désolé, les places sont épuisées pour cette session.' });    
         }
     
+        // 1. Vérifier si l'email existe déjà dans pending_payments
+        const { data: existingPayment, error: checkError1 } = await supabase
+          .from('pending_payments')
+          .select('id')
+          .eq('email', email.toLowerCase())
+          .maybeSingle();
+
+        if (existingPayment) {
+          return res.status(409).json({ error: 'Un dossier avec cet email est déjà en cours de traitement.' });
+        }
+
+        // 2. Vérifier si l'email existe déjà dans inscriptions (membres officiels)
+        const { data: existingMember, error: checkError2 } = await supabase
+          .from('inscriptions')
+          .select('id')
+          .eq('email', email.toLowerCase())
+          .maybeSingle();
+
+        if (existingMember) {
+          return res.status(409).json({ error: 'Cet email est déjà enregistré comme membre officiel.' });
+        }
+
         const submissionId = Date.now();
         const submissionData = {
           id: submissionId,

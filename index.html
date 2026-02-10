@@ -681,6 +681,18 @@
             submitSection.scrollIntoView({ behavior: 'smooth' });
         });
 
+        // Logic: ODD Selection Limit (Max 3)
+        const oddChecks = document.querySelectorAll('input[name="odd"]');
+        oddChecks.forEach(check => {
+            check.addEventListener('change', () => {
+                const checked = document.querySelectorAll('input[name="odd"]:checked');
+                if (checked.length > 3) {
+                    check.checked = false;
+                    alert("⚠️ Limitation technique : Vous ne pouvez sélectionner que 3 Objectifs de Développement Durable (ODD) maximum pour garantir la pertinence de votre dossier.");
+                }
+            });
+        });
+
         // Logic: Form Submission
         document.getElementById('project-form').addEventListener('submit', async (e) => {
             e.preventDefault();
