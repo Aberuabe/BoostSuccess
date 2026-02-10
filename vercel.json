@@ -2,6 +2,10 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/track",
+      "destination": "/track.html"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
     },

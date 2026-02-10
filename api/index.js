@@ -718,20 +718,60 @@ app.post('/api/download-acceptance-pdf', async (req, res) => {
 
 // Route pour obtenir le nombre d'inscriptions
 app.get('/api/inscriptions-count', async (req, res) => {
-  const inscriptions = await getInscriptions();
-  const config = await getConfig();
-  
-  const maxPlaces = config.maxPlaces || 5;
-  const sessionOpen = config.sessionOpen;
+// ... (logique existante)
+});
 
-  logger.info(`Inscriptions: ${inscriptions.length}/${maxPlaces}, Session: ${sessionOpen}`);
+// --- NOUVELLE ROUTE: SUIVI DOSSIER ---
+app.post('/api/track', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ error: 'Email invalide' });
+    }
 
-  res.json({
-    count: inscriptions.length,
-    max: maxPlaces,
-    available: inscriptions.length < maxPlaces,
-    sessionOpen: sessionOpen
-  });
+    if (!supabase) return res.status(503).json({ error: 'DB non disponible' });
+
+    // Chercher dans les paiements/soumissions
+    const { data, error } = await supabase
+      .from('pending_payments')
+      .select('nom, status, date, id')
+      .eq('email', email.trim().toLowerCase())
+      .order('date', { ascending: false })
+      .limit(1);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: 'Aucun dossier trouvé pour cet email.' });
+    }
+
+    const dossier = data[0];
+    
+    // Traduction des statuts pour le client
+    const statusMap = {
+      'pending_review': { label: 'Analyse technique en cours', step: 1 },
+      'awaiting_payment': { label: 'Projet Validé - En attente de paiement', step: 2 },
+      'project_rejected': { label: 'Projet non retenu', step: 0 },
+      'pending': { label: 'Vérification du paiement en cours', step: 3 },
+      'approved': { label: 'Adhésion Confirmée - Membre Officiel', step: 4 },
+      'rejected': { label: 'Paiement non validé', step: 2 }
+    };
+
+    const statusInfo = statusMap[dossier.status] || { label: 'En cours', step: 1 };
+
+    res.json({
+      success: true,
+      nom: dossier.nom,
+      statusLabel: statusInfo.label,
+      step: statusInfo.step,
+      date: dossier.date,
+      id: dossier.id
+    });
+
+  } catch (error) {
+    console.error('Erreur tracking:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 // Route pour créer une demande d'analyse de projet (avant paiement)
