@@ -368,6 +368,40 @@
         }
 
         /* Mobile Optimizations */
+        /* Custom Alert Popups */
+        .alert-popup {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            background: #1f2937;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 2000;
+            transform: translateX(120%);
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #fff;
+            max-width: 400px;
+        }
+
+        .alert-popup.active { transform: translateX(0); }
+
+        @media (max-width: 768px) {
+            .alert-popup {
+                top: auto;
+                bottom: 30px;
+                right: 20px;
+                left: 20px;
+                transform: translateY(150%);
+            }
+            .alert-popup.active { transform: translateY(0); }
+        }
+
         @media (max-width: 768px) {
             .hero {
                 padding: 120px 0 40px;
@@ -596,9 +630,25 @@
         <p>&copy; 2026 Boost & Success Engine. Propulsé par l'excellence.</p>
     </footer>
 
+    <div id="custom-alert" class="alert-popup">
+        <i class="fas fa-circle-exclamation" style="color: var(--primary)"></i>
+        <div id="alert-message"></div>
+    </div>
+
     <script>
         const API_URL = window.location.origin;
         let isSystemOpen = true;
+
+        // UI Alert System
+        function showAlert(message) {
+            const alert = document.getElementById('custom-alert');
+            const msg = document.getElementById('alert-message');
+            msg.textContent = message;
+            alert.classList.add('active');
+            setTimeout(() => {
+                alert.classList.remove('active');
+            }, 5000);
+        }
 
         // Logic: Seat Count & Global Lock
         async function updateSeats() {
@@ -688,7 +738,7 @@
                 const checked = document.querySelectorAll('input[name="odd"]:checked');
                 if (checked.length > 3) {
                     check.checked = false;
-                    alert("⚠️ Limitation technique : Vous ne pouvez sélectionner que 3 Objectifs de Développement Durable (ODD) maximum pour garantir la pertinence de votre dossier.");
+                    showAlert("⚠️ Limitation technique : Vous ne pouvez sélectionner que 3 Objectifs de Développement Durable (ODD) maximum pour garantir la pertinence de votre dossier.");
                 }
             });
         });
@@ -697,7 +747,7 @@
         document.getElementById('project-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!isSystemOpen) {
-                alert("Désolé, les inscriptions viennent de fermer.");
+                showAlert("Désolé, les inscriptions viennent de fermer.");
                 return;
             }
 
@@ -745,12 +795,12 @@ DÉFIS/OBJ 6 MOIS : ${document.getElementById('q-challenges').value}
                     document.getElementById('success-modal').style.display = 'flex';
                 } else {
                     const err = await res.json();
-                    alert("Erreur : " + err.error);
+                    showAlert("Erreur : " + err.error);
                     btn.disabled = false;
                     btn.textContent = "Réessayer la soumission";
                 }
             } catch (err) {
-                alert("Erreur de connexion réseau");
+                showAlert("Erreur de connexion réseau");
                 btn.disabled = false;
                 btn.textContent = "Réessayer la soumission";
             }
