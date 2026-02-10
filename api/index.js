@@ -938,7 +938,7 @@ app.post('/admin/approve-project/:id', requireAdminAuth, async (req, res) => {
 
     await sendEmail(submission.email, '✅ Votre projet Boost & Success a été validé !', emailHtml);
 
-    res.json({ success: true, message: 'Projet approuvé et client notifié pour le paiement.' });
+    res.json({ success: true, message: 'Projet approuvé and client notifié pour le paiement.' });
   } catch (error) {
     console.error('Error approve-project:', error);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -1402,7 +1402,7 @@ app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Paiement approuvé et client notifié',
+      message: 'Paiement approuvé and client notifié',
       count: totalCount,
       max: config.maxPlaces
     });
@@ -1599,7 +1599,7 @@ app.post('/admin/reject-payment/:id', requireAdminAuth, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Paiement rejeté et client notifié'
+      message: 'Paiement rejeté and client notifié'
     });
 
   } catch (error) {
