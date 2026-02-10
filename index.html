@@ -98,6 +98,21 @@
             border-radius: 6px;
         }
 
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00ff88;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
         /* Hero */
         .hero {
             padding: 140px 0 60px;
@@ -180,6 +195,7 @@
             filter: grayscale(1);
         }
 
+        /* Form Sections */
         .section {
             padding: 40px 0; /* Réduit de 80px à 40px pour moins de distance */
             border-top: 1px solid var(--border);
@@ -245,6 +261,14 @@
             border-color: var(--primary);
             background: rgba(0, 242, 255, 0.05);
             box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+        }
+
+        .glass-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            transition: var(--transition);
         }
 
         .glass-panel:hover {
@@ -343,11 +367,6 @@
             font-size: 0.9rem;
         }
 
-        @media (max-width: 768px) {
-            .hero { padding-top: 140px; }
-            .btn-outline { margin-left: 0; margin-top: 12px; width: 100%; }
-            .btn-primary { width: 100%; }
-        }
         /* Mobile Optimizations */
         @media (max-width: 768px) {
             .hero {
@@ -361,14 +380,22 @@
                 padding: 24px 16px;
             }
             .status-indicator span {
-                display: none; /* Cache le texte pour gagner de la place */
+                display: inline; /* Rendre le texte visible sur mobile */
+                font-size: 0.7rem;
             }
             .status-indicator {
-                padding: 8px;
+                padding: 6px 10px;
             }
         }
 
         @media (max-width: 480px) {
+            .logo {
+                font-size: 0.9rem;
+            }
+            .status-indicator {
+                padding: 4px 8px;
+                font-size: 0.7rem;
+            }
             .hero h1 {
                 font-size: 1.8rem;
             }
@@ -459,29 +486,38 @@
                         </div>
                     </div>
 
-                    <!-- Section 2: Profil & Leadership -->
+                    <!-- Section 2: Parcours & Leadership -->
                     <div style="margin-bottom: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
-                        <h3 style="color: var(--primary); margin-bottom: 20px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">2. Profil et Leadership</h3>
+                        <h3 style="color: var(--primary); margin-bottom: 20px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">2. Parcours & Leadership</h3>
                         <div class="input-group">
-                            <label>Biographie personnelle (Max 150 mots)</label>
-                            <textarea id="q-bio" class="modern-input" style="min-height: 100px;" placeholder="Parlez-nous de vous et de ce qui vous a amené à devenir entrepreneur..." required></textarea>
-                        </div>
-                        <div class="input-group">
-                            <label>Compétences et expérience en leadership (Max 100 mots)</label>
-                            <textarea id="q-leadership" class="modern-input" style="min-height: 80px;" placeholder="Décrivez votre expérience pour gérer l'entreprise..." required></textarea>
+                            <label>Biographie et Compétences Clés (Max 250 mots)</label>
+                            <textarea id="q-bio-leader" class="modern-input" style="min-height: 120px;" placeholder="Parlez-nous de votre parcours et de vos compétences pour diriger ce projet..." required></textarea>
                         </div>
                     </div>
 
-                    <!-- Section 3: Analyse & Innovation -->
+                    <!-- Section 3: Analyse & Business Model -->
                     <div style="margin-bottom: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
-                        <h3 style="color: var(--primary); margin-bottom: 20px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">3. Analyse du Projet et Innovation</h3>
+                        <h3 style="color: var(--primary); margin-bottom: 20px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">3. Analyse & Business Model</h3>
                         <div class="input-group">
-                            <label>Quel problème votre produit/service résout-il ? (Max 200 mots)</label>
-                            <textarea id="q-problem" class="modern-input" style="min-height: 120px;" required></textarea>
+                            <label>Problème & Solution (Max 200 mots)</label>
+                            <textarea id="q-problem" class="modern-input" style="min-height: 100px;" placeholder="Quel problème résolvez-vous et comment ?" required></textarea>
                         </div>
-                        <div class="input-group">
-                            <label>Innovation (Énumérez 3 points de différenciation)</label>
-                            <textarea id="q-innovation" class="modern-input" style="min-height: 80px;" placeholder="1. ... \n2. ... \n3. ..." required></textarea>
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label>Modèle de Revenus</label>
+                                <select id="q-revenue" class="modern-input" required>
+                                    <option value="">Sélectionner...</option>
+                                    <option value="Vente Directe">Vente Directe</option>
+                                    <option value="Abonnement">Abonnement / Service</option>
+                                    <option value="Commission">Commission / Intermédiation</option>
+                                    <option value="Publicité">Publicité / Data</option>
+                                    <option value="Autre">Autre</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Marché Cible</label>
+                                <input type="text" id="q-target" class="modern-input" placeholder="Ex: Jeunes 18-25 ans, PME..." required>
+                            </div>
                         </div>
                         <div class="grid-2">
                             <div class="input-group">
@@ -497,8 +533,8 @@
                                 </select>
                             </div>
                             <div class="input-group">
-                                <label>Différenciation (Max 50 mots)</label>
-                                <input type="text" id="q-diff" class="modern-input" placeholder="Face à la concurrence..." required>
+                                <label>Innovation Clé (50 mots)</label>
+                                <input type="text" id="q-innovation" class="modern-input" placeholder="Ce qui vous rend unique..." required>
                             </div>
                         </div>
                         <div class="input-group">
@@ -514,29 +550,28 @@
                         </div>
                     </div>
 
+                    <!-- Section 4: Finance & Équipe -->
                     <div style="margin-bottom: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
-                        <h3 style="color: var(--primary); margin-bottom: 20px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">4. Objectifs et Opérations</h3>
+                        <h3 style="color: var(--primary); margin-bottom: 20px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">4. Finance & Équipe</h3>
                         <div class="grid-2">
                             <div class="input-group">
-                                <label>Objectifs actuels (50 mots)</label>
-                                <textarea id="q-obj-now" class="modern-input" style="min-height: 60px;" required></textarea>
+                                <label>Besoin de Financement (Estimation)</label>
+                                <select id="q-funding" class="modern-input" required>
+                                    <option value="">Sélectionner une tranche...</option>
+                                    <option value="1M - 5M FCFA">1M - 5M FCFA</option>
+                                    <option value="5M - 20M FCFA">5M - 20M FCFA</option>
+                                    <option value="20M - 50M FCFA">20M - 50M FCFA</option>
+                                    <option value="50M FCFA+">Plus de 50M FCFA</option>
+                                </select>
                             </div>
                             <div class="input-group">
-                                <label>Objectifs futurs (50 mots)</label>
-                                <textarea id="q-obj-future" class="modern-input" style="min-height: 60px;" required></textarea>
+                                <label>Taille de l'équipe (Collaborateurs)</label>
+                                <input type="number" id="q-team-size" class="modern-input" value="1" min="1" required>
                             </div>
                         </div>
                         <div class="input-group">
-                            <label>3 Principaux Défis rencontrés (50 mots)</label>
-                            <textarea id="q-challenges" class="modern-input" style="min-height: 60px;" required></textarea>
-                        </div>
-                        <div class="input-group">
-                            <label>Ressources Humaines (Effectifs)</label>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                                <div><small style="color:var(--text-dim)">Contractuels</small><input type="number" id="hr-contract" class="modern-input" value="0"></div>
-                                <div><small style="color:var(--text-dim)">Temps partiel</small><input type="number" id="hr-part" class="modern-input" value="0"></div>
-                                <div><small style="color:var(--text-dim)">Temps plein</small><input type="number" id="hr-full" class="modern-input" value="0"></div>
-                            </div>
+                            <label>Principaux Défis & Objectifs à 6 mois</label>
+                            <textarea id="q-challenges" class="modern-input" style="min-height: 80px;" placeholder="Quelles sont vos prochaines étapes ?" required></textarea>
                         </div>
                     </div>
 
@@ -660,26 +695,21 @@
 
             // Construction du compte-rendu structuré
             const formattedProjet = `
---- PROFIL & LEADERSHIP ---
-BIOGRAPHIE : ${document.getElementById('q-bio').value}
-LEADERSHIP : ${document.getElementById('q-leadership').value}
+--- PARCOURS & LEADERSHIP ---
+BIO/COMPÉTENCES : ${document.getElementById('q-bio-leader').value}
 
---- ANALYSE & INNOVATION ---
-PROBLÈME RÉSOLU : ${document.getElementById('q-problem').value}
-INNOVATION : ${document.getElementById('q-innovation').value}
+--- ANALYSE & BUSINESS MODEL ---
+PROBLÈME/SOLUTION : ${document.getElementById('q-problem').value}
+REVENUS : ${document.getElementById('q-revenue').value}
+MARCHÉ : ${document.getElementById('q-target').value}
 SECTEUR : ${document.getElementById('q-sector').value}
-DIFFÉRENCIATION : ${document.getElementById('q-diff').value}
+INNOVATION : ${document.getElementById('q-innovation').value}
 ODD : ${selectedODD || 'Aucun sélectionné'}
 
---- OBJECTIFS & OPÉRATIONS ---
-ACTUELS : ${document.getElementById('q-obj-now').value}
-FUTURS : ${document.getElementById('q-obj-future').value}
-DÉFIS : ${document.getElementById('q-challenges').value}
-
---- RESSOURCES HUMAINES ---
-CONTRACTUELS : ${document.getElementById('hr-contract').value}
-TEMPS PARTIEL : ${document.getElementById('hr-part').value}
-TEMPS PLEIN : ${document.getElementById('hr-full').value}
+--- FINANCE & ÉQUIPE ---
+FINANCEMENT : ${document.getElementById('q-funding').value}
+ÉQUIPE : ${document.getElementById('q-team-size').value} membres
+DÉFIS/OBJ 6 MOIS : ${document.getElementById('q-challenges').value}
             `.trim();
 
             const payload = {
