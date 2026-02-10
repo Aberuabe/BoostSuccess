@@ -142,27 +142,8 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Servir les fichiers statiques immédiatement (AVANT les routes pour éviter les conflits)
-app.use(express.static(path.join(__dirname, '.')));
-
-// --- ROUTES PAGES HTML ---
-app.get(['/', '/index', '/index.html'], (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.get(['/admin-login', '/admin-login.html'], (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin-login.html'));
-});
-
-app.get(['/admin-dashboard', '/admin-dashboard.html'], (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin-dashboard.html'));
-});
-
-app.get(['/payment', '/payment.html'], (req, res) => {
-  logger.info(`Accès à la page de paiement - ID: ${req.query.id}`);
-  res.sendFile(path.join(__dirname, 'payment.html'));
-});
-// -------------------------
+// --- ROUTES API ---
+// Les fichiers HTML et JS sont servis par Vercel directement via vercel.json
 
 // -------------------------
 
