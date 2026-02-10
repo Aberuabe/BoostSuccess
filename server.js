@@ -142,8 +142,25 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Servir les fichiers statiques (Essentiel pour Vercel)
+// Servir les fichiers statiques (JS, CSS, images)
 app.use(express.static(path.join(__dirname, '.')));
+
+// --- ROUTES PAGES HTML ---
+app.get(['/', '/index', '/index.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get(['/admin-login', '/admin-login.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin-login.html'));
+});
+
+app.get(['/admin-dashboard', '/admin-dashboard.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin-dashboard.html'));
+});
+
+app.get(['/payment', '/payment.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'payment.html'));
+});
 
 // --- ROUTES API ---
 
