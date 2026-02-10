@@ -1,29 +1,18 @@
 {
   "version": 2,
-  "routes": [
+  "builds": [
     {
-      "src": "/admin.js",
-      "dest": "/admin.js"
-    },
-    {
-      "src": "/app.js",
-      "dest": "/app.js"
-    },
-    {
-      "src": "/styles.css",
-      "dest": "/styles.css"
-    },
-    {
-      "src": "/(index|admin-login|admin-dashboard|payment)(\\.html)?",
-      "dest": "/$1.html"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/admin/(.*)",
-      "dest": "/server.js"
+      "src": "server.js",
+      "use": "@vercel/node"
     }
+  ],
+  "routes": [
+    { "src": "/admin.js", "dest": "/admin.js" },
+    { "src": "/app.js", "dest": "/app.js" },
+    { "src": "/styles.css", "dest": "/styles.css" },
+    { "src": "/(index|admin-login|admin-dashboard|payment)(\\.html)?", "dest": "/$1.html" },
+    { "src": "/admin/(.*)", "dest": "server.js" },
+    { "src": "/api/(.*)", "dest": "server.js" },
+    { "src": "/(.*)", "dest": "server.js" }
   ]
 }

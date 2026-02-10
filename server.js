@@ -142,6 +142,16 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// --- SERVICE DES FICHIERS ---
+app.get('/admin.js', (req, res) => res.sendFile(path.join(__dirname, 'admin.js')));
+app.get('/app.js', (req, res) => res.sendFile(path.join(__dirname, 'app.js')));
+app.get('/styles.css', (req, res) => res.sendFile(path.join(__dirname, 'styles.css')));
+
+app.get(['/', '/index', '/index.html'], (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get(['/admin-login', '/admin-login.html'], (req, res) => res.sendFile(path.join(__dirname, 'admin-login.html')));
+app.get(['/admin-dashboard', '/admin-dashboard.html'], (req, res) => res.sendFile(path.join(__dirname, 'admin-dashboard.html')));
+app.get(['/payment', '/payment.html'], (req, res) => res.sendFile(path.join(__dirname, 'payment.html')));
+
 // --- ROUTES API ---
 
 // -------------------------
