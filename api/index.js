@@ -757,32 +757,31 @@ app.post('/api/submit', async (req, res) => {
       return res.status(400).json({ error: 'WhatsApp invalide (10 chiffres)' });
     }
 
-    if (projet.length < 20 || projet.length > 1000) {
-      return res.status(400).json({ error: 'Le projet doit faire entre 20 et 1000 caractères' });
-    }
-
-    // Vérifier si places disponibles
-    const config = await getConfig();
-    const maxPlaces = config.maxPlaces || 5;
-    const inscriptions = await getInscriptions();
+        if (projet.length < 20 || projet.length > 5000) {
+          return res.status(400).json({ error: 'Le projet doit faire entre 20 et 5000 caractères' });        
+        }
     
-    if (inscriptions.length >= maxPlaces) {
-      return res.status(409).json({ error: 'Désolé, les places sont épuisées pour cette session.' });
-    }
-
-    const submissionId = Date.now();
-    const submissionData = {
-      id: submissionId,
-      nom,
-      email,
-      whatsapp,
-      projet,
-      status: 'pending_review',
-      method: 'pending', // Fournir une valeur par défaut pour éviter la contrainte NOT NULL
-      date: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString()
-    };
-
-    // Sauvegarder uniquement dans Supabase
+        // Vérifier si places disponibles
+        const config = await getConfig();
+        const maxPlaces = config.maxPlaces || 5;
+        const inscriptions = await getInscriptions();
+        
+        if (inscriptions.length >= maxPlaces) {
+          return res.status(409).json({ error: 'Désolé, les places sont épuisées pour cette session.' });    
+        }
+    
+        const submissionId = Date.now();
+        const submissionData = {
+          id: submissionId,
+          nom,
+          email,
+          whatsapp,
+          projet,
+          status: 'pending_review',
+          method: 'pending', 
+          date: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString()
+        };
+        // Sauvegarder uniquement dans Supabase
     if (supabase) {
       try {
         console.log('📡 Tentative d\'insertion dans Supabase table pending_payments:', submissionData);
