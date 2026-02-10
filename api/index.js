@@ -718,7 +718,23 @@ app.post('/api/download-acceptance-pdf', async (req, res) => {
 
 // Route pour obtenir le nombre d'inscriptions
 app.get('/api/inscriptions-count', async (req, res) => {
-// ... (logique existante)
+  try {
+    const inscriptions = await getInscriptions();
+    const config = await getConfig();
+    
+    const maxPlaces = config.maxPlaces || 5;
+    const sessionOpen = config.sessionOpen;
+
+    res.json({
+      count: inscriptions.length,
+      max: maxPlaces,
+      available: inscriptions.length < maxPlaces,
+      sessionOpen: sessionOpen
+    });
+  } catch (error) {
+    console.error('Erreur inscriptions-count:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 // --- NOUVELLE ROUTE: SUIVI DOSSIER ---
