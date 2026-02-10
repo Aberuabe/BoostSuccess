@@ -6,7 +6,6 @@
     <title>Admin Dashboard | Boost & Success</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #00f2ff;
@@ -123,6 +122,40 @@
             font-weight: 700;
         }
 
+        /* Analytics lightweight bars */
+        .stats-bars-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .stat-bar-item {
+            width: 100%;
+        }
+
+        .bar-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+            color: var(--text-dim);
+        }
+
+        .bar-rail {
+            height: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .bar-progress {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 1s ease-out;
+        }
+
         /* Stats Grid */
         .stats-grid {
             display: grid;
@@ -157,7 +190,7 @@
             border: 1px solid var(--border);
             border-radius: 24px;
             padding: 30px;
-            min-height: 400px;
+            min-height: auto;
         }
 
         .section-header {
@@ -353,19 +386,23 @@
             </div>
         </div>
 
-        <!-- Analytics Section -->
-        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); margin-bottom: 30px;">
-            <div class="section-card" style="min-height: 350px;">
+        <!-- Analytics Section (Légère) -->
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-bottom: 30px;">
+            <div class="section-card">
                 <div class="section-header">
-                    <h2><i class="fas fa-chart-pie"></i> Répartition par Secteur</h2>
+                    <h2><i class="fas fa-chart-simple"></i> Top Secteurs d'activité</h2>
                 </div>
-                <canvas id="chart-sectors"></canvas>
+                <div id="analytics-sectors" class="stats-bars-container">
+                    <!-- Bars dynamic -->
+                </div>
             </div>
-            <div class="section-card" style="min-height: 350px;">
+            <div class="section-card">
                 <div class="section-header">
-                    <h2><i class="fas fa-chart-line"></i> Flux des Candidatures</h2>
+                    <h2><i class="fas fa-bullseye"></i> Top Objectifs (ODD)</h2>
                 </div>
-                <canvas id="chart-timeline"></canvas>
+                <div id="analytics-odd" class="stats-bars-container">
+                    <!-- Bars dynamic -->
+                </div>
             </div>
         </div>
 
@@ -430,7 +467,7 @@
         </div>
     </div>
 
-    <!-- MODAL: View Full Project -->
+    <!-- MODALS -->
     <div id="project-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -438,9 +475,7 @@
                 <button class="btn btn-ghost btn-icon" onclick="closeModal('project-modal')"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
-                <div id="project-details-info" style="margin-bottom: 20px;">
-                    <!-- Client info here -->
-                </div>
+                <div id="project-details-info" style="margin-bottom: 20px;"></div>
                 <h4>Description du projet:</h4>
                 <div class="project-text" id="project-full-text"></div>
             </div>
@@ -450,7 +485,6 @@
         </div>
     </div>
 
-    <!-- MODAL: Reject Project -->
     <div id="reject-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -468,7 +502,6 @@
         </div>
     </div>
 
-    <!-- MODAL: Confirm Payment -->
     <div id="confirm-payment-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -486,23 +519,19 @@
         </div>
     </div>
 
-    <!-- MODAL: Proof Preview -->
     <div id="proof-modal" class="modal">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
                 <h3><i class="fas fa-receipt"></i> Preuve de Paiement</h3>
                 <button class="btn btn-ghost btn-icon" onclick="closeModal('proof-modal')"><i class="fas fa-times"></i></button>
             </div>
-            <div class="modal-body" id="proof-container">
-                <!-- Proof Image or ID -->
-            </div>
+            <div class="modal-body" id="proof-container"></div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('proof-modal')">Fermer</button>
             </div>
         </div>
     </div>
 
-    <!-- Custom Alert Popup -->
     <div id="custom-alert" class="alert-popup">
         <div class="alert-icon" id="alert-icon"></div>
         <div class="alert-message" id="alert-message"></div>

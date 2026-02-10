@@ -59,7 +59,7 @@ async function loadData() {
         allPaymentsData = paymentsData;
 
         updateDashboard(inscriptionsData, paymentsData);
-        loadAnalytics(); // Appeler le chargement des graphiques
+        loadAnalytics(); // Nouveau chargeur léger
     } catch (error) {
         console.error('📊 Sync Error:', error);
     }
@@ -113,6 +113,50 @@ function updateDashboard(config, payments) {
     renderReviewList(payments.filter(p => p.status === 'pending_review'));
     renderPendingList(payments.filter(p => p.status === 'pending'));
     renderApprovedList(payments.filter(p => p.status === 'approved'));
+}
+
+async function loadAnalytics() {
+    try {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch(`${API_URL}/admin/analytics`, {
+            headers: { 'x-admin-token': token }
+        });
+        const data = await res.json();
+
+        // Rendu des barres pour les secteurs
+        renderStatBars('analytics-sectors', data.sectors);
+        // Rendu des barres pour les ODD
+        renderStatBars('analytics-odd', data.odd);
+
+    } catch (e) { console.error("Analytics error:", e); }
+}
+
+function renderStatBars(containerId, dataObj) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const entries = Object.entries(dataObj || {}).sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((acc, curr) => acc + curr[1], 0);
+
+    if (entries.length === 0) {
+        container.innerHTML = '<small style="color:var(--text-dim)">Aucune donnée disponible</small>';
+        return;
+    }
+
+    container.innerHTML = entries.map(([label, value]) => {
+        const percent = total > 0 ? Math.round((value / total) * 100) : 0;
+        return `
+            <div class="stat-bar-item">
+                <div class="bar-info">
+                    <span>${label}</span>
+                    <span>${value} (${percent}%)</span>
+                </div>
+                <div class="bar-rail">
+                    <div class="bar-progress" style="width: ${percent}%"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 // --- RENDERERS ---
@@ -210,9 +254,10 @@ function viewProject(id) {
 async function approveProject(id) {
     if (!confirmCustom('Valider l\'analyse technique et autoriser le paiement ?')) return;
     try {
+        const token = localStorage.getItem('adminToken');
         const res = await fetch(`${API_URL}/admin/approve-project/${id}`, {
             method: 'POST',
-            headers: { 'x-admin-token': localStorage.getItem('adminToken') }
+            headers: { 'x-admin-token': token }
         });
         if (res.ok) { showAlert('Projet validé !'); loadData(); }
     } catch (e) { showAlert('Erreur serveur', 'error'); }
@@ -224,9 +269,10 @@ async function confirmRejectProject() {
     const reason = document.getElementById('reject-reason').value;
     if (!reason) { showAlert('Motif requis', 'error'); return; }
     try {
+        const token = localStorage.getItem('adminToken');
         const res = await fetch(`${API_URL}/admin/reject-project/${selectedId}`, {
             method: 'POST',
-            headers: { 'x-admin-token': localStorage.getItem('adminToken'), 'Content-Type': 'application/json' },
+            headers: { 'x-admin-token': token, 'Content-Type': 'application/json' },
             body: JSON.stringify({ reason })
         });
         if (res.ok) { showAlert('Projet rejeté.'); closeModal('reject-modal'); loadData(); }
@@ -250,9 +296,10 @@ function openConfirmPaymentModal(id) { selectedId = id; openModal('confirm-payme
 async function confirmApprovePayment() {
     const groupLink = document.getElementById('group-link-input').value;
     try {
+        const token = localStorage.getItem('adminToken');
         const res = await fetch(`${API_URL}/admin/approve-payment/${selectedId}`, {
             method: 'POST',
-            headers: { 'x-admin-token': localStorage.getItem('adminToken'), 'Content-Type': 'application/json' },
+            headers: { 'x-admin-token': token, 'Content-Type': 'application/json' },
             body: JSON.stringify({ groupLink })
         });
         if (res.ok) { showAlert('Paiement validé !'); closeModal('confirm-payment-modal'); loadData(); }
@@ -262,9 +309,10 @@ async function confirmApprovePayment() {
 async function rejectPayment(id) {
     if (!confirmCustom('Rejeter ce paiement ?')) return;
     try {
+        const token = localStorage.getItem('adminToken');
         const res = await fetch(`${API_URL}/admin/reject-payment/${id}`, {
             method: 'POST',
-            headers: { 'x-admin-token': localStorage.getItem('adminToken') }
+            headers: { 'x-admin-token': token }
         });
         if (res.ok) { showAlert('Paiement rejeté.'); loadData(); }
     } catch (e) { showAlert('Erreur serveur', 'error'); }
@@ -272,9 +320,10 @@ async function rejectPayment(id) {
 
 async function toggleSession() {
     try {
+        const token = localStorage.getItem('adminToken');
         const res = await fetch(`${API_URL}/admin/toggle-session`, {
             method: 'POST',
-            headers: { 'x-admin-token': localStorage.getItem('adminToken') }
+            headers: { 'x-admin-token': token }
         });
         if (res.ok) { const data = await res.json(); showAlert(data.message); loadData(); }
     } catch (e) { showAlert('Erreur serveur', 'error'); }
@@ -282,9 +331,10 @@ async function toggleSession() {
 
 async function updatePlaces(action) {
     try {
+        const token = localStorage.getItem('adminToken');
         const res = await fetch(`${API_URL}/admin/update-places`, {
             method: 'POST',
-            headers: { 'x-admin-token': localStorage.getItem('adminToken'), 'Content-Type': 'application/json' },
+            headers: { 'x-admin-token': token, 'Content-Type': 'application/json' },
             body: JSON.stringify({ action })
         });
         if (res.ok) loadData();
@@ -294,9 +344,10 @@ async function updatePlaces(action) {
 async function resetAll() {
     if (!confirmCustom('⚠️ RESET GLOBAL ?')) return;
     try {
+        const token = localStorage.getItem('adminToken');
         const res = await fetch(`${API_URL}/admin/reset-all`, {
             method: 'POST',
-            headers: { 'x-admin-token': localStorage.getItem('adminToken') }
+            headers: { 'x-admin-token': token }
         });
         if (res.ok) { showAlert('Reset terminé !'); loadData(); }
     } catch (e) { showAlert('Erreur serveur', 'error'); }
@@ -305,78 +356,14 @@ async function resetAll() {
 async function resetPlaces() {
     if (!confirmCustom('Reset places à 5 ?')) return;
     try {
+        const token = localStorage.getItem('adminToken');
         const res = await fetch(`${API_URL}/admin/update-places`, {
             method: 'POST',
-            headers: { 'x-admin-token': localStorage.getItem('adminToken'), 'Content-Type': 'application/json' },
+            headers: { 'x-admin-token': token, 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'reset' })
         });
         if (res.ok) loadData();
     } catch (e) { showAlert('Erreur serveur', 'error'); }
-}
-
-let sectorChartInstance = null;
-let timelineChartInstance = null;
-
-async function loadAnalytics() {
-    try {
-        const token = localStorage.getItem('adminToken');
-        const res = await fetch(`${API_URL}/admin/analytics`, {
-            headers: { 'x-admin-token': token }
-        });
-        const data = await res.json();
-
-        // 1. Chart Secteurs
-        const sectorCtx = document.getElementById('chart-sectors')?.getContext('2d');
-        if (sectorCtx) {
-            if (sectorChartInstance) sectorChartInstance.destroy();
-            sectorChartInstance = new Chart(sectorCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(data.sectors),
-                    datasets: [{
-                        data: Object.values(data.sectors),
-                        backgroundColor: ['#00f2ff', '#7000ff', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#a8a8b3', font: { family: 'Inter' } } } }
-                }
-            });
-        }
-
-        // 2. Chart Timeline
-        const timelineCtx = document.getElementById('chart-timeline')?.getContext('2d');
-        if (timelineCtx) {
-            if (timelineChartInstance) timelineChartInstance.destroy();
-            timelineChartInstance = new Chart(timelineCtx, {
-                type: 'line',
-                data: {
-                    labels: Object.keys(data.timeline),
-                    datasets: [{
-                        label: 'Candidatures',
-                        data: Object.values(data.timeline),
-                        borderColor: '#00f2ff',
-                        tension: 0.4,
-                        fill: true,
-                        backgroundColor: 'rgba(0, 242, 255, 0.1)',
-                        pointBackgroundColor: '#00f2ff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#29292e' }, ticks: { color: '#a8a8b3' } },
-                        x: { grid: { display: false }, ticks: { color: '#a8a8b3' } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
-    } catch (e) { console.error("Analytics render error:", e); }
 }
 
 // --- INIT ---
@@ -386,6 +373,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'admin-login.html';
     } else {
         loadData();
-        setInterval(loadData, 15000);
+        setInterval(loadData, 15000); // Polling toutes les 15s
     }
 });
