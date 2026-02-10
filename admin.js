@@ -59,6 +59,7 @@ async function loadData() {
         allPaymentsData = paymentsData;
 
         updateDashboard(inscriptionsData, paymentsData);
+        loadAnalytics(); // Appeler le chargement des graphiques
     } catch (error) {
         console.error('📊 Sync Error:', error);
     }
@@ -311,6 +312,71 @@ async function resetPlaces() {
         });
         if (res.ok) loadData();
     } catch (e) { showAlert('Erreur serveur', 'error'); }
+}
+
+let sectorChartInstance = null;
+let timelineChartInstance = null;
+
+async function loadAnalytics() {
+    try {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch(`${API_URL}/admin/analytics`, {
+            headers: { 'x-admin-token': token }
+        });
+        const data = await res.json();
+
+        // 1. Chart Secteurs
+        const sectorCtx = document.getElementById('chart-sectors')?.getContext('2d');
+        if (sectorCtx) {
+            if (sectorChartInstance) sectorChartInstance.destroy();
+            sectorChartInstance = new Chart(sectorCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(data.sectors),
+                    datasets: [{
+                        data: Object.values(data.sectors),
+                        backgroundColor: ['#00f2ff', '#7000ff', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#a8a8b3', font: { family: 'Inter' } } } }
+                }
+            });
+        }
+
+        // 2. Chart Timeline
+        const timelineCtx = document.getElementById('chart-timeline')?.getContext('2d');
+        if (timelineCtx) {
+            if (timelineChartInstance) timelineChartInstance.destroy();
+            timelineChartInstance = new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(data.timeline),
+                    datasets: [{
+                        label: 'Candidatures',
+                        data: Object.values(data.timeline),
+                        borderColor: '#00f2ff',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(0, 242, 255, 0.1)',
+                        pointBackgroundColor: '#00f2ff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#29292e' }, ticks: { color: '#a8a8b3' } },
+                        x: { grid: { display: false }, ticks: { color: '#a8a8b3' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    } catch (e) { console.error("Analytics render error:", e); }
 }
 
 // --- INIT ---

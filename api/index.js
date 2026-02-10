@@ -1060,6 +1060,61 @@ app.get('/admin/inscriptions', requireAdminAuth, async (req, res) => {
   });
 });
 
+// --- ROUTE ANALYTICS ---
+app.get('/admin/analytics', requireAdminAuth, async (req, res) => {
+  if (!supabase) return res.status(503).json({ error: 'DB non disponible' });
+
+  try {
+    const { data: projects, error } = await supabase
+      .from('pending_payments')
+      .select('projet, status, date');
+
+    if (error) throw error;
+
+    // Initialisation des compteurs
+    const stats = {
+      sectors: {},
+      status: {},
+      timeline: {},
+      odd: {}
+    };
+
+    projects.forEach(p => {
+      const text = p.projet || "";
+      
+      // Extraction Secteur (Format: SECTEUR : [Nom])
+      const sectorMatch = text.match(/SECTEUR\s*:\s*([^\n\r]+)/i);
+      if (sectorMatch) {
+        const s = sectorMatch[1].trim();
+        stats.sectors[s] = (stats.sectors[s] || 0) + 1;
+      }
+
+      // Extraction ODD (Format: ODD : [Liste])
+      const oddMatch = text.match(/ODD\s*:\s*([^\n\r]+)/i);
+      if (oddMatch) {
+        const odds = oddMatch[1].split(',').map(o => o.trim());
+        odds.forEach(o => {
+          if (o && o !== 'Aucun sélectionné') {
+            stats.odd[o] = (stats.odd[o] || 0) + 1;
+          }
+        });
+      }
+
+      // Status
+      stats.status[p.status] = (stats.status[p.status] || 0) + 1;
+
+      // Timeline (par jour)
+      const day = new Date(p.date).toLocaleDateString('fr-FR');
+      stats.timeline[day] = (stats.timeline[day] || 0) + 1;
+    });
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Analytics Error:', error);
+    res.status(500).json({ error: 'Erreur analytics' });
+  }
+});
+
 // Route pour admin - approuver un paiement avec lien du groupe
 app.post('/admin/approve-payment/:id', requireAdminAuth, async (req, res) => {
   try {
