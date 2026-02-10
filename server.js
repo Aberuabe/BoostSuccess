@@ -142,8 +142,10 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Servir les fichiers statiques (Essentiel pour Vercel)
+app.use(express.static(path.join(__dirname, '.')));
+
 // --- ROUTES API ---
-// Les fichiers HTML et JS sont servis par Vercel directement via vercel.json
 
 // -------------------------
 
